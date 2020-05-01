@@ -9,13 +9,27 @@ namespace Rendering
   class AnimatedCamera : ICamera, ITimeDependent
   {
     private IAnimatableCamera animatableCamera;
-    private List<Dictionary<string, object>> parameters;
-    private List<int> paramTimesMs;
+    private static List<Dictionary<string, object>> parameters;
+    private static List<int> paramTimesMs;
 
-    public AnimatedCamera (AnimatableStaticCamera animatableCamera, string fileName)
+    // matrix for Catmull-Rom spline
+    private static Vector4 m0 = new Vector4(-1, 3, -3, 1);
+    private static Vector4 m1 = new Vector4(2, -5, 4, -1);
+    private static Vector4 m2 = new Vector4(-1, 0, 1, 0);
+    private static Vector4 m3 = new Vector4(0, 2, 0, 0);
+    private static Matrix4 splineMatrix = new Matrix4(m0, m1, m2, m3);
+
+    public AnimatedCamera (IAnimatableCamera animatableCamera, string fileName)
     {
       this.animatableCamera = animatableCamera;
       ReadAndSaveCameraScript(fileName);
+      Start = paramTimesMs[0];
+      End = paramTimesMs[paramTimesMs.Count - 1];
+    }
+
+    private AnimatedCamera (IAnimatableCamera animatableCamera)
+    {
+      this.animatableCamera = animatableCamera;
     }
 
     private void ReadAndSaveCameraScript(string fileName)
@@ -31,7 +45,7 @@ namespace Rendering
       {
         throw new IOException("Please specify a file with camera script.");
       }
-      // TODO: keep params if not changed
+
       try
       {
         string line = sr.ReadLine();
@@ -97,6 +111,17 @@ namespace Rendering
     public double AspectRatio { get => animatableCamera.AspectRatio; set => animatableCamera.AspectRatio = value; }
     public double Width { get => animatableCamera.Width; set => animatableCamera.Width = value; }
     public double Height { get => animatableCamera.Height; set => animatableCamera.Height = value; }
+    public double Start { get; set; }
+    public double End { get; set; }
+    public double Time { get; set; }
+    public object Clone()
+    {
+      AnimatedCamera clonedCamera = new AnimatedCamera(this.animatableCamera);
+      clonedCamera.Start = this.Start;
+      clonedCamera.End = this.End;
+      clonedCamera.Time = this.Time;
+      return clonedCamera;
+    }
 
     public bool GetRay (double x, double y, out Vector3d p0, out Vector3d p1)
     {
