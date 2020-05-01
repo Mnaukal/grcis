@@ -125,8 +125,44 @@ namespace Rendering
 
     public bool GetRay (double x, double y, out Vector3d p0, out Vector3d p1)
     {
-      // TODO: GetRay should interpolate the keyframes, apply them to IAnimatableCamera inside and call GetRay on it
-      throw new NotImplementedException();
+      int frameStart = 0;
+      for (int i = 0; i < paramTimesMs.Count; i++)
+      {
+        if (Time >= paramTimesMs[i])
+        {
+          frameStart = i;
+          break;
+        }
+      }
+
+      double t = (Time - paramTimesMs[frameStart]) / (paramTimesMs[frameStart + 1] - paramTimesMs[frameStart]);
+      Vector4 tVector = new Vector4((float)Math.Pow(t, 3), (float)Math.Pow(t, 2), (float)t, 1);
+
+      string[] paramNames = animatableCamera.GetParamNames();
+      var cameraParams = new Dictionary<string, object>();
+
+      foreach (string param in paramNames)
+      {
+        Vector4[] points = new Vector4[4];
+        for (int i = -1; i <= 2; i++)
+        {
+          int index = frameStart + i;
+          if (index < 0)
+            index = 0;
+          if (index >= parameters.Count)
+            index = parameters.Count - 1;
+
+          Vector3 v = (Vector3)parameters[index][param];
+          points[i + 1] = new Vector4(v.X, v.Y, v.Z, 1);
+        }
+        Matrix4 matrixOfPoints = new Matrix4(points[0], points[1], points[2], points[3]);
+
+        Vector4 interpolatedVector = 0.5f * tVector * splineMatrix * matrixOfPoints;
+        cameraParams[param] = new Vector3d(interpolatedVector.X, interpolatedVector.Y, interpolatedVector.Z);
+      }
+
+      animatableCamera.ApplyParams(cameraParams);
+      return animatableCamera.GetRay(x, y, out p0, out p1);
     }
   }
 
