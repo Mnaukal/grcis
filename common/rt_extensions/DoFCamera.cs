@@ -21,6 +21,19 @@ namespace Rendering
             prepare();
         }
 
+        public DoFCamera (Vector3d cen, Vector3d dir, double ang, Vector3d focus_point, double max_shift = 0.05, ShiftMode shift_mode = ShiftMode.CircleJitter) : base(cen, dir, ang)
+        {
+            this.max_shift = max_shift;
+            this.shift_mode = shift_mode;
+            SetFocusPoint(focus_point);
+            prepare();
+        }
+
+        protected void SetFocusPoint (Vector3d focus_point)
+        {
+            this.focus_distance = Vector3d.Distance(center, focus_point);
+        }
+
         /// <summary>
         /// Should be called after every parameter change..
         /// </summary>
