@@ -136,16 +136,16 @@ namespace Rendering
     public bool GetRay (double x, double y, out Vector3d p0, out Vector3d p1)
     {
       int frameStart = 0;
-      for (int i = 0; i < paramTimesMs.Count; i++)
+      for (int i = paramTimesMs.Count - 1; i >= 0; i--)
       {
         if (Time >= paramTimesMs[i])
-        {
           frameStart = i;
+        else
           break;
-        }
       }
 
-      double t = (Time - paramTimesMs[frameStart]) / (paramTimesMs[frameStart + 1] - paramTimesMs[frameStart]);
+      int nextFrame = frameStart + 1 > paramTimesMs.Count - 1 ? paramTimesMs.Count - 1 : frameStart + 1; 
+      double t = (Time - paramTimesMs[frameStart]) / (paramTimesMs[nextFrame] - paramTimesMs[frameStart]);
       Vector4 tVector = new Vector4((float)Math.Pow(t, 3), (float)Math.Pow(t, 2), (float)t, 1);
 
       var cameraParams = new Dictionary<string, object>();
