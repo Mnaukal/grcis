@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 
 namespace Rendering
 {
-  class AnimatedCamera : ICamera, ITimeDependent
+  public class AnimatedCamera : ICamera, ITimeDependent
   {
     private IAnimatableCamera animatableCamera;
     private string[] paramNames;
@@ -175,7 +175,7 @@ namespace Rendering
     }
   }
 
-  class AnimatableStaticCamera : StaticCamera, IAnimatableCamera
+  public class AnimatableStaticCamera : StaticCamera, IAnimatableCamera
   {
     public virtual string[] GetParamNames ()
     {
@@ -197,7 +197,7 @@ namespace Rendering
     }
   }
 
-  interface IAnimatableCamera : ICamera
+  public interface IAnimatableCamera : ICamera
   {
     string[] GetParamNames ();
     void ApplyParams (Dictionary<string, object> p);
