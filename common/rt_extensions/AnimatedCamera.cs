@@ -3,14 +3,16 @@ using System.Collections.Generic;
 using MathSupport;
 using OpenTK;
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace Rendering
 {
   class AnimatedCamera : ICamera, ITimeDependent
   {
     private IAnimatableCamera animatableCamera;
-    private static List<Dictionary<string, object>> parameters;
-    private static List<int> paramTimesMs;
+    private string[] paramNames;
+    private static List<Dictionary<string, object>> parameters = new List<Dictionary<string, object>>();
+    private static List<int> paramTimesMs = new List<int>();
 
     // matrix for Catmull-Rom spline
     private static Vector4 m0 = new Vector4(-1, 3, -3, 1);
@@ -22,6 +24,7 @@ namespace Rendering
     public AnimatedCamera (IAnimatableCamera animatableCamera, string fileName)
     {
       this.animatableCamera = animatableCamera;
+      paramNames = animatableCamera.GetParamNames();
       ReadAndSaveCameraScript(fileName);
       Start = paramTimesMs[0];
       End = paramTimesMs[paramTimesMs.Count - 1];
@@ -34,8 +37,6 @@ namespace Rendering
 
     private void ReadAndSaveCameraScript(string fileName)
     {
-      string[] paramNames = animatableCamera.GetParamNames();
-
       StreamReader sr;
       try
       {
@@ -73,7 +74,7 @@ namespace Rendering
                 }
                 firstParams = false;
               }
-              parameters.Add(keyFrameParams);
+              parameters.Add(CopyDictionary(keyFrameParams));
             }
           }
           else
@@ -81,6 +82,7 @@ namespace Rendering
             bool found = false;
             foreach (string param in paramNames)
             {
+              tokens[0] = Regex.Replace(tokens[0], @"\s+", String.Empty);
               if (param == tokens[0])
               {
                 found = true;
@@ -93,12 +95,12 @@ namespace Rendering
             firstKeyFrame = false;
             //expecting entries in form "paramName: N, N, N", where N is an integer
             string[] values = tokens[1].Split(commaSeparator);
-            keyFrameParams[tokens[0]] = new Vector3d
-              (Double.Parse(values[0]), Double.Parse(values[1]), Double.Parse(values[2]));
+            keyFrameParams[tokens[0]] = new Vector3
+              (Int32.Parse(values[0]), Int32.Parse(values[1]), Int32.Parse(values[2]));
           }
           line = sr.ReadLine();
           if (line == null)
-            parameters.Add(keyFrameParams);
+            parameters.Add(CopyDictionary(keyFrameParams));
         }
         sr.Close();
       }
@@ -106,6 +108,14 @@ namespace Rendering
       {
         throw new IOException("An error occurred while reading the script file.");
       }
+    }
+
+    private Dictionary<string, object> CopyDictionary(Dictionary<string, object> original)
+    {
+      var copy = new Dictionary<string, object>();
+      foreach (string param in paramNames)
+        copy[param] = original[param];
+      return copy;
     }
 
     public double AspectRatio { get => animatableCamera.AspectRatio; set => animatableCamera.AspectRatio = value; }
@@ -138,7 +148,6 @@ namespace Rendering
       double t = (Time - paramTimesMs[frameStart]) / (paramTimesMs[frameStart + 1] - paramTimesMs[frameStart]);
       Vector4 tVector = new Vector4((float)Math.Pow(t, 3), (float)Math.Pow(t, 2), (float)t, 1);
 
-      string[] paramNames = animatableCamera.GetParamNames();
       var cameraParams = new Dictionary<string, object>();
 
       foreach (string param in paramNames)
@@ -160,7 +169,7 @@ namespace Rendering
         Vector4 interpolatedVector = 0.5f * tVector * splineMatrix * matrixOfPoints;
         cameraParams[param] = new Vector3d(interpolatedVector.X, interpolatedVector.Y, interpolatedVector.Z);
       }
-
+      
       animatableCamera.ApplyParams(cameraParams);
       return animatableCamera.GetRay(x, y, out p0, out p1);
     }
