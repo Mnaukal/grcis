@@ -5,6 +5,7 @@ using MathSupport;
 using OpenTK;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Globalization;
 
 namespace Rendering
 {
@@ -68,7 +69,7 @@ namespace Rendering
 
                             keyframes.Add(new Keyframe(keyframeTime, CopyDictionary(keyframeParams)));
                         }
-                        keyframeTime = double.Parse(tokens[0]);
+                        keyframeTime = double.Parse(tokens[0], CultureInfo.InvariantCulture);
                     }
                     else // parameters for current keyframe
                     {
@@ -194,7 +195,10 @@ namespace Rendering
                 try
                 {
                     string[] values = s.Split(commaSeparator);
-                    return new Vector3d(double.Parse(values[0]), double.Parse(values[1]), double.Parse(values[2]));
+                    return new Vector3d(
+                        double.Parse(values[0], CultureInfo.InvariantCulture),
+                        double.Parse(values[1], CultureInfo.InvariantCulture),
+                        double.Parse(values[2], CultureInfo.InvariantCulture));
                 }
                 catch
                 {
@@ -206,7 +210,7 @@ namespace Rendering
             {
                 try
                 {
-                    return double.Parse(s);
+                    return double.Parse(s, CultureInfo.InvariantCulture);
                 }
                 catch
                 {
