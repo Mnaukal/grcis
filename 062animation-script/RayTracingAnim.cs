@@ -84,7 +84,7 @@ namespace Rendering
   /// Pilot implementation of time-dependent camera.
   /// It simply goes round the central point (look-at point).
   /// </summary>
-  public class AnimatedCamera : StaticCamera, ITimeDependent
+  public class AnimatedCameraOld : StaticCamera, ITimeDependent
   {
     /// <summary>
     /// Starting (minimal) time in seconds.
@@ -156,14 +156,14 @@ namespace Rendering
     /// <returns></returns>
     public virtual object Clone ()
     {
-      AnimatedCamera c = new AnimatedCamera( lookAt, center0, MathHelper.RadiansToDegrees( (float)hAngle ) );
+      AnimatedCameraOld c = new AnimatedCameraOld( lookAt, center0, MathHelper.RadiansToDegrees( (float)hAngle ) );
       c.Start = Start;
       c.End   = End;
       c.Time  = Time;
       return c;
     }
 
-    public AnimatedCamera ( Vector3d lookat, Vector3d cen, double ang )
+    public AnimatedCameraOld ( Vector3d lookat, Vector3d cen, double ang )
       : base( cen, lookat - cen, ang )
     {
       lookAt  = lookat;
@@ -202,7 +202,7 @@ namespace Rendering
       sc.BackgroundColor = new double[] { 0.0, 0.05, 0.07 };
 
       // Camera:
-      AnimatedCamera cam = new AnimatedCamera( new Vector3d( 0.7, -0.4,  0.0 ),
+      AnimatedCameraOld cam = new AnimatedCameraOld( new Vector3d( 0.7, -0.4,  0.0 ),
                                                new Vector3d( 0.7,  0.8, -6.0 ),
                                                50.0 );
       cam.End = 20.0;            // one complete turn takes 20.0 seconds

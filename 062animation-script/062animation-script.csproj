@@ -167,6 +167,9 @@
     <Compile Include="..\common\RayTracingRender.cs">
       <Link>RayTracingRender.cs</Link>
     </Compile>
+    <Compile Include="..\common\rt_extensions\AnimatedCamera.cs">
+      <Link>AnimatedCamera.cs</Link>
+    </Compile>
     <Compile Include="..\common\Scene.cs">
       <Link>Scene.cs</Link>
     </Compile>

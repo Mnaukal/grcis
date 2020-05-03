@@ -285,7 +285,7 @@
     <Compile Include="..\common\RenderProgress.cs">
       <Link>RenderProgress.cs</Link>
     </Compile>
-    <Compile Include="..\common\rt_extensions\DoFCamera.cs" />
+    <Compile Include="..\common\rt_extensions\AnimatedCamera.cs" />
     <Compile Include="..\common\Scene.cs">
       <Link>Scene.cs</Link>
     </Compile>
