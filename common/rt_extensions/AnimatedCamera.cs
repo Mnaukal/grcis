@@ -202,6 +202,25 @@ namespace Rendering
                 }
             }
 
+            /// <summary>
+            /// Parses a direction Vector3d from a string in form 'A, B, C', where A,B,C are doubles, and converts it to quaternion (using (0,1,0) as up vector)
+            /// </summary>
+            public static object ParseVector3_DirectionToQuaternion(string s)
+            {
+                Vector3d direction = (Vector3d)ParseVector3(s);
+                Matrix4d lookat = Matrix4d.LookAt(Vector3d.Zero, direction, Vector3d.UnitY);
+                return MatrixToQuaternion(lookat);
+            }
+
+            private static Quaterniond MatrixToQuaternion (Matrix4d m)
+            {
+                return Quaterniond.FromMatrix(new Matrix3d(
+                  m.M11, m.M12, m.M13,
+                  m.M21, m.M22, m.M23,
+                  m.M31, m.M32, m.M33
+                  ));
+            }
+
             public static object ParseDouble (string s)
             {
                 try
@@ -234,6 +253,8 @@ namespace Rendering
                     return Catmull_Rom_Vector4((Vector4d)previous, (Vector4d)current, (Vector4d)next, (Vector4d)later, t);
                 if (previous is Vector3d)
                     return Catmull_Rom_Vector3((Vector3d)previous, (Vector3d)current, (Vector3d)next, (Vector3d)later, t);
+                if (previous is Quaterniond)
+                    return Catmull_Rom_Quaternion((Quaterniond)previous, (Quaterniond)current, (Quaterniond)next, (Quaterniond)later, t);
                 if (previous is double)
                     return Catmull_Rom_Double((double)previous, (double)current, (double)next, (double)later, t);
                 throw new ArgumentException("Type not supported: '" + previous.GetType() + "'.");
@@ -252,6 +273,21 @@ namespace Rendering
                 return new Vector3d(result.X, result.Y, result.Z);
             }
 
+            private static Quaterniond Catmull_Rom_Quaternion (Quaterniond previous, Quaterniond current, Quaterniond next, Quaterniond later, double t)
+            {
+                Vector4d result = Catmull_Rom_Vector4(QuaternionToVector4(previous), QuaternionToVector4(current), QuaternionToVector4(next), QuaternionToVector4(later), t);
+                return Vector4ToQuaternion(result).Normalized();
+            }
+
+            private static Vector4d QuaternionToVector4(Quaterniond q)
+            {
+                return new Vector4d(q.X, q.Y, q.Z, q.W);
+            }
+            private static Quaterniond Vector4ToQuaternion(Vector4d v)
+            {
+                return new Quaterniond(v.X, v.Y, v.Z, v.W);
+            }
+
             private static double Catmull_Rom_Double (double previous, double current, double next, double later, double t)
             {
                 Vector4d result = Catmull_Rom_Vector4(new Vector4d(previous), new Vector4d(current), new Vector4d(next), new Vector4d(later), t);
@@ -266,13 +302,40 @@ namespace Rendering
             /// <param name="later">unused</param>
             public static object LERP (object previous, object current, object next, object later, double t)
             {
-                if (previous is Vector4d)
+                if (current is Vector4d)
                     return Vector4d.Lerp((Vector4d)current, (Vector4d)next, t);
-                if (previous is Vector3d)
+                if (current is Vector3d)
                     return Vector3d.Lerp((Vector3d)current, (Vector3d)next, t);
-                if (previous is double)
+                if (current is double)
                     return (1 - t) * (double)current + t * (double)next;
-                throw new ArgumentException("Type not supported: '" + previous.GetType() + "'.");
+                throw new ArgumentException("Type not supported: '" + current.GetType() + "'.");
+            }
+
+            /// <summary>
+            /// Spherical linear interpolation
+            /// </summary>
+            /// <param name="t">number between 0 and 1</param>
+            /// <param name="previous">unused</param>
+            /// <param name="later">unused</param>
+            public static object SLERP (object previous, object current, object next, object later, double t)
+            {
+                if (current is Quaterniond)
+                    return Quaterniond.Slerp((Quaterniond)current, (Quaterniond)next, t);
+                throw new ArgumentException("Type not supported: '" + current.GetType() + "'.");
+            }
+
+            /// <summary>
+            /// Spherical quadratic interpolation
+            /// </summary>
+            /// <param name="t">number between 0 and 1</param>
+            public static object SQuad (object previous, object current, object next, object later, double t)
+            {
+                if (current is Quaterniond)
+                    return Quaterniond.Slerp(
+                        Quaterniond.Slerp((Quaterniond)previous, (Quaterniond)later, t),
+                        Quaterniond.Slerp((Quaterniond)current, (Quaterniond)next, t),
+                        2f * t * (1f - t));
+                throw new ArgumentException("Type not supported: '" + current.GetType() + "'.");
             }
         }
     }
@@ -283,7 +346,7 @@ namespace Rendering
         {
             return new AnimatedCamera.Parameter[] {
                 new AnimatedCamera.Parameter("position", AnimatedCamera.Parsers.ParseVector3, AnimatedCamera.Interpolators.Catmull_Rom, true),
-                new AnimatedCamera.Parameter("direction", AnimatedCamera.Parsers.ParseVector3, AnimatedCamera.Interpolators.Catmull_Rom, true),
+                new AnimatedCamera.Parameter("direction", AnimatedCamera.Parsers.ParseVector3_DirectionToQuaternion, AnimatedCamera.Interpolators.SLERP, true),
                 new AnimatedCamera.Parameter("angle", AnimatedCamera.Parsers.ParseDouble, AnimatedCamera.Interpolators.LERP)
             };
         }
@@ -293,7 +356,8 @@ namespace Rendering
             try
             {
                 center = (Vector3d)p["position"];
-                direction = (Vector3d)p["direction"];
+                //direction = (Vector3d)p["direction"];
+                direction = Vector3d.Transform(-Vector3d.UnitZ, (Quaterniond)p["direction"]);
                 if (p.ContainsKey("angle"))
                     hAngle = MathHelper.DegreesToRadians((double)p["angle"]);
             }
