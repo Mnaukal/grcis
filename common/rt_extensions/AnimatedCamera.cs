@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using MathSupport;
 using OpenTK;
 using System.IO;
@@ -10,24 +11,19 @@ namespace Rendering
   public class AnimatedCamera : ICamera, ITimeDependent
   {
     private IAnimatableCamera animatableCamera;
-    private string[] paramNames;
-    private static List<Dictionary<string, object>> parameters = new List<Dictionary<string, object>>();
-    private static List<int> paramTimesMs = new List<int>();
+    private Dictionary<string, Parameter> parameters;
+    private List<Keyframe> keyframes = new List<Keyframe>();
 
-    // matrix for Catmull-Rom spline
-    private static Vector4 m0 = new Vector4(-1, 3, -3, 1);
-    private static Vector4 m1 = new Vector4(2, -5, 4, -1);
-    private static Vector4 m2 = new Vector4(-1, 0, 1, 0);
-    private static Vector4 m3 = new Vector4(0, 2, 0, 0);
-    private static Matrix4 splineMatrix = new Matrix4(m0, m1, m2, m3);
+    private static char[] colonSeparator = {':'};
+    private static char [] commaSeparator = {','};
 
     public AnimatedCamera (IAnimatableCamera animatableCamera, string fileName)
     {
       this.animatableCamera = animatableCamera;
-      paramNames = animatableCamera.GetParamNames();
+      parameters = animatableCamera.GetParams().ToDictionary(p => p.Name, p => p);
       ReadAndSaveCameraScript(fileName);
-      Start = paramTimesMs[0];
-      End = paramTimesMs[paramTimesMs.Count - 1];
+      Start = keyframes[0].Time;
+      End = keyframes[keyframes.Count - 1].Time;
     }
 
     private AnimatedCamera (IAnimatableCamera animatableCamera)
@@ -35,7 +31,7 @@ namespace Rendering
       this.animatableCamera = animatableCamera;
     }
 
-    private void ReadAndSaveCameraScript(string fileName)
+    private void ReadAndSaveCameraScript (string fileName)
     {
       StreamReader sr;
       try
@@ -49,59 +45,42 @@ namespace Rendering
 
       try
       {
-        string line = sr.ReadLine();
-        char[] colonSeparator = {':'};
-        char [] commaSeparator = {','};
-        bool firstKeyFrame = true;
-        var keyFrameParams = new Dictionary<string, object>();
-        bool firstParams = true;
-          
-        while (line != null)
-        {
-          string[] tokens = line.Split(colonSeparator, StringSplitOptions.RemoveEmptyEntries);
-          if (tokens.Length == 1)
-          {
-            paramTimesMs.Add(Int32.Parse(tokens[0]));
-            if (!firstKeyFrame)
-            {
-              if (firstParams)
-              {
-                for (int i = 0; i < paramNames.Length; i++)
-                {
-                  if (!keyFrameParams.TryGetValue(paramNames[i], out object ignored))
-                    throw new ArgumentException("The value of some parameters " +
-                      "wasn't provided in the first key frame.");
-                }
-                firstParams = false;
-              }
-              parameters.Add(CopyDictionary(keyFrameParams));
-            }
-          }
-          else
-          {
-            bool found = false;
-            foreach (string param in paramNames)
-            {
-              tokens[0] = Regex.Replace(tokens[0], @"\s+", String.Empty);
-              if (param == tokens[0])
-              {
-                found = true;
-                break;
-              }
-            }
-            if (!found)
-              throw new ArgumentException("A token in camera script wasn't any of the provided ParamNames.");
+        var keyframeParams = new Dictionary<string, object>();
+        double keyframeTime = 0;
 
-            firstKeyFrame = false;
-            //expecting entries in form "paramName: N, N, N", where N is an integer
-            string[] values = tokens[1].Split(commaSeparator);
-            keyFrameParams[tokens[0]] = new Vector3
-              (Int32.Parse(values[0]), Int32.Parse(values[1]), Int32.Parse(values[2]));
-          }
-          line = sr.ReadLine();
+        while (true)
+        {
+          string line = sr.ReadLine();
           if (line == null)
-            parameters.Add(CopyDictionary(keyFrameParams));
+            break;
+          line = Regex.Replace(line, @"\s+", string.Empty);
+          if (line.Length == 0 || line[0] == '#')
+            continue;
+
+          string[] tokens = line.Split(colonSeparator, StringSplitOptions.RemoveEmptyEntries);
+
+          if (tokens.Length == 1) // start of new keyframe
+          {
+            if (keyframeParams.Count > 0)
+            {
+              if (keyframes.Count == 0) // adding first keyframe
+                CheckRequiredParams(keyframeParams);
+
+              keyframes.Add(new Keyframe(keyframeTime, CopyDictionary(keyframeParams)));
+            }
+            keyframeTime = double.Parse(tokens[0]);
+          }
+          else // parameters for current keyframe
+          {
+            if (!parameters.ContainsKey(tokens[0]))
+              throw new ArgumentException("Parameter '" + tokens[0] + "' in camera script wasn't any of the provided Params.");
+
+            Parameter p = parameters[tokens[0]];
+            object value = p.Parser(tokens[1]);
+            keyframeParams[p.Name] = value;
+          }
         }
+        keyframes.Add(new Keyframe(keyframeTime, CopyDictionary(keyframeParams)));
         sr.Close();
       }
       catch (IOException)
@@ -110,11 +89,20 @@ namespace Rendering
       }
     }
 
-    private Dictionary<string, object> CopyDictionary(Dictionary<string, object> original)
+    private void CheckRequiredParams (Dictionary<string, object> keyframeParams)
+    {
+      foreach (Parameter param in parameters.Values)
+        if (param.Required && !keyframeParams.ContainsKey(param.Name))
+          throw new ArgumentException("The value of '" + param.Name + "' parameter wasn't provided in the first key frame.");
+    }
+
+
+
+    private Dictionary<string, object> CopyDictionary (Dictionary<string, object> original)
     {
       var copy = new Dictionary<string, object>();
-      foreach (string param in paramNames)
-        copy[param] = original[param];
+      foreach (string key in original.Keys)
+        copy[key] = original[key];
       return copy;
     }
 
@@ -124,7 +112,7 @@ namespace Rendering
     public double Start { get; set; }
     public double End { get; set; }
     public double Time { get; set; }
-    public object Clone()
+    public object Clone ()
     {
       AnimatedCamera clonedCamera = new AnimatedCamera(this.animatableCamera);
       clonedCamera.Start = this.Start;
@@ -135,51 +123,125 @@ namespace Rendering
 
     public bool GetRay (double x, double y, out Vector3d p0, out Vector3d p1)
     {
-      int frameStart = 0;
-      for (int i = paramTimesMs.Count - 1; i >= 0; i--)
+      int i = 0;
+      for (; i < keyframes.Count; i++)
       {
-        if (Time >= paramTimesMs[i])
-          frameStart = i;
-        else
+        if (keyframes[i].Time > Time)
           break;
       }
-
-      int nextFrame = frameStart + 1 > paramTimesMs.Count - 1 ? paramTimesMs.Count - 1 : frameStart + 1; 
-      double t = (Time - paramTimesMs[frameStart]) / (paramTimesMs[nextFrame] - paramTimesMs[frameStart]);
-      Vector4 tVector = new Vector4((float)Math.Pow(t, 3), (float)Math.Pow(t, 2), (float)t, 1);
+      i--;
+      Keyframe previous = i >= 1 ? keyframes[i - 1] : keyframes[0];
+      Keyframe current = keyframes[i];
+      Keyframe next = i < keyframes.Count - 1 ?  keyframes[i+1] : keyframes[keyframes.Count - 1];
+      Keyframe later = i < keyframes.Count - 2 ? keyframes[i + 2] : keyframes[keyframes.Count - 1];
+      double t = (Time - current.Time) / (next.Time - current.Time);
 
       var cameraParams = new Dictionary<string, object>();
 
-      foreach (string param in paramNames)
+      foreach (Parameter param in parameters.Values)
       {
-        Vector4[] points = new Vector4[4];
-        for (int i = -1; i <= 2; i++)
-        {
-          int index = frameStart + i;
-          if (index < 0)
-            index = 0;
-          if (index >= parameters.Count)
-            index = parameters.Count - 1;
-
-          Vector3 v = (Vector3)parameters[index][param];
-          points[i + 1] = new Vector4(v.X, v.Y, v.Z, 1);
-        }
-        Matrix4 matrixOfPoints = new Matrix4(points[0], points[1], points[2], points[3]);
-
-        Vector4 interpolatedVector = 0.5f * tVector * splineMatrix * matrixOfPoints;
-        cameraParams[param] = new Vector3d(interpolatedVector.X, interpolatedVector.Y, interpolatedVector.Z);
+        cameraParams[param.Name] = param.Interpolator(
+            previous.parameters[param.Name],
+            current.parameters[param.Name],
+            next.parameters[param.Name],
+            later.parameters[param.Name],
+            t);
       }
-      
+
       animatableCamera.ApplyParams(cameraParams);
       return animatableCamera.GetRay(x, y, out p0, out p1);
+    }
+
+    private class Keyframe
+    {
+      public readonly double Time;
+      public readonly Dictionary<string, object> parameters;
+
+      public Keyframe (double time, Dictionary<string, object> parameters)
+      {
+        Time = time;
+        this.parameters = parameters;
+      }
+    }
+
+    public class Parameter
+    {
+      public readonly Interpolator Interpolator;
+      public readonly Parser Parser;
+      public readonly string Name;
+      public readonly bool Required;
+
+      public Parameter (string name, Parser parser, Interpolator interpolator, bool required = false)
+      {
+        Interpolator = interpolator;
+        Name = name;
+        Required = required;
+        Parser = parser;
+      }
+    }
+
+    public delegate object Parser (string s);
+    public delegate object Interpolator (object previous, object current, object next, object later, double t);
+
+    public static class Parsers
+    {
+      /// <summary>
+      /// Parses a Vector3d from a string in form 'A, B, C' where A,B,C are doubles
+      /// </summary>
+      public static object ParseVector3 (string s)
+      {
+        try
+        {
+          string[] values = s.Split(commaSeparator);
+          return new Vector3d(double.Parse(values[0]), double.Parse(values[1]), double.Parse(values[2]));
+        }
+        catch
+        {
+          throw new ArgumentException("Error while parsing Vector3: '" + s + "'.");
+        }
+      }
+    }
+
+    public static class Interpolators
+    {
+      private static Matrix4d Catmull_Rom_M = new Matrix4d(
+              -1,  3, -3,  1,
+               2, -5,  4, -1,
+              -1,  0,  1,  0,
+               0,  2,  0,  0);
+
+      public static object Catmull_Rom (object previous, object current, object next, object later, double t)
+      {
+        if (previous is Vector4d)
+          return Catmull_Rom_Vector4((Vector4d)previous, (Vector4d)current, (Vector4d)next, (Vector4d)later, t);
+        if (previous is Vector3d)
+          return Catmull_Rom_Vector3((Vector3d)previous, (Vector3d)current, (Vector3d)next, (Vector3d)later, t);
+        throw new ArgumentException("Type not supported: '" + previous.GetType() + "'.");
+      }
+
+      private static Vector4d Catmull_Rom_Vector4 (Vector4d previous, Vector4d current, Vector4d next, Vector4d later, double t)
+      {
+        Matrix4d G = new Matrix4d(previous, current, next, later);
+        Vector4d T = new Vector4d(t*t*t, t*t, t, 1);
+        return 0.5f * Vector4d.Transform(T, Catmull_Rom_M * G); // Vector4d.Transform is equivalent to *
+      }
+
+      private static Vector3d Catmull_Rom_Vector3 (Vector3d previous, Vector3d current, Vector3d next, Vector3d later, double t)
+      {
+        Vector4d result = Catmull_Rom_Vector4(new Vector4d(previous), new Vector4d(current), new Vector4d(next), new Vector4d(later), t);
+        return new Vector3d(result.X, result.Y, result.Z);
+      }
     }
   }
 
   public class AnimatableStaticCamera : StaticCamera, IAnimatableCamera
   {
-    public virtual string[] GetParamNames ()
+    public virtual AnimatedCamera.Parameter[] GetParams ()
     {
-      return new string[] { "position", "direction" };
+      return new AnimatedCamera.Parameter[] {
+                new AnimatedCamera.Parameter("position", AnimatedCamera.Parsers.ParseVector3, AnimatedCamera.Interpolators.Catmull_Rom, true),
+                new AnimatedCamera.Parameter("direction", AnimatedCamera.Parsers.ParseVector3, AnimatedCamera.Interpolators.Catmull_Rom, true)
+            };
     }
 
     public virtual void ApplyParams (Dictionary<string, object> p)
@@ -199,7 +261,7 @@ namespace Rendering
 
   public interface IAnimatableCamera : ICamera
   {
-    string[] GetParamNames ();
+    AnimatedCamera.Parameter[] GetParams ();
     void ApplyParams (Dictionary<string, object> p);
   }
 }
