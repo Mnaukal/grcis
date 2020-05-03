@@ -4,7 +4,7 @@ using System.Collections.Generic;
 if (outParam != null)
 {
   outParam["Start"] = 0.0;
-  outParam["End"]   = 10.0;
+  outParam["End"]   = 20.0;
   outParam["Algorithm"] = new RayTracing(scene);
 }
 
