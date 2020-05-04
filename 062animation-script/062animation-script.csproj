@@ -173,6 +173,7 @@
     <Compile Include="..\common\rt_extensions\DoFCamera.cs">
       <Link>DoFCamera.cs</Link>
     </Compile>
+    <Compile Include="..\common\rt_extensions\VertigoEffectCamera.cs" />
     <Compile Include="..\common\Scene.cs">
       <Link>Scene.cs</Link>
     </Compile>

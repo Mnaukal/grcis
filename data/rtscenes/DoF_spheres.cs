@@ -1,11 +1,12 @@
 using System.Collections.Generic;
+using System.IO;
 
 // Optional IImageFunction.
 if (outParam != null)
 {
     outParam["Algorithm"] = new RayTracing(scene);
     outParam["Start"] =  0.0;
-    outParam["End"]   = 10.0;
+    outParam["End"]   = 15.0;
 }
 
 // Params dictionary:
@@ -27,7 +28,9 @@ Util.TryParse(p, "shift", ref s);
 scene.Camera = new DoFCamera(new Vector3d(-6.0, 1.0, 0.0),
                              new Vector3d(1.0, 0.1, 0.0),
                              70.0, Vector3d.Zero, s);*/
-scene.Camera = new AnimatedCamera(new AnimatableDoFCamera(), "camera_script.txt");
+string script_file = Path.Combine(Path.GetDirectoryName(scriptFileName), "dof_spheres.yaml");
+scene.Camera = new AnimatedCamera(new VertigoEffectCamera(new AnimatableDoFCamera(), 8), script_file);
+(scene as ITimeDependent).End = (scene.Camera as AnimatedCamera).End;
 
 // Light sources:
 scene.Sources = new LinkedList<ILightSource>();
