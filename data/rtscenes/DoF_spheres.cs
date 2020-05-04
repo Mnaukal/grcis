@@ -5,8 +5,6 @@ using System.IO;
 if (outParam != null)
 {
     outParam["Algorithm"] = new RayTracing(scene);
-    outParam["Start"] =  0.0;
-    outParam["End"]   = 15.0;
 }
 
 // Params dictionary:
@@ -29,8 +27,13 @@ scene.Camera = new DoFCamera(new Vector3d(-6.0, 1.0, 0.0),
                              new Vector3d(1.0, 0.1, 0.0),
                              70.0, Vector3d.Zero, s);*/
 string script_file = Path.Combine(Path.GetDirectoryName(scriptFileName), "dof_spheres.yaml");
-scene.Camera = new AnimatedCamera(new VertigoEffectCamera(new AnimatableDoFCamera(), 8), script_file);
+scene.Camera = new AnimatedCamera(new VertigoEffectCamera(new AnimatableDoFCamera(), true, true, 8), script_file);
 (scene as ITimeDependent).End = (scene.Camera as AnimatedCamera).End;
+if (outParam != null)
+{
+    outParam["Start"] =  (scene.Camera as AnimatedCamera).Start;
+    outParam["End"] = (scene.Camera as AnimatedCamera).End;
+}
 
 // Light sources:
 scene.Sources = new LinkedList<ILightSource>();
@@ -73,3 +76,11 @@ root.InsertChild(sphere, Matrix4d.Scale(0.7) * Matrix4d.CreateTranslation(-3.5, 
 sphere = new Sphere();
 sphere.SetAttribute(PropertyName.MATERIAL, glossy_red);
 root.InsertChild(sphere, Matrix4d.Scale(0.8) * Matrix4d.CreateTranslation(-2, 0.8, 2.7));
+
+sphere = new Sphere();
+sphere.SetAttribute(PropertyName.MATERIAL, glossy_red);
+root.InsertChild(sphere, Matrix4d.Scale(0.5) * Matrix4d.CreateTranslation(-6, 0.5, 2));
+
+sphere = new Sphere();
+sphere.SetAttribute(PropertyName.MATERIAL, yellow);
+root.InsertChild(sphere, Matrix4d.Scale(3) * Matrix4d.CreateTranslation(3, 3, 4));
