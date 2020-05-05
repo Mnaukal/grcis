@@ -18,7 +18,7 @@ scene.Intersectable = root;
 scene.BackgroundColor = new double[] { 0.0, 0.05, 0.07 };
 
 // Camera:
-scene.Camera = new AnimatedCamera(new AnimatableStaticCamera(), "camera_script.txt");
+scene.Camera = new AnimatedCamera(new AnimatableStaticCamera(), "..\\..\\..\\data\\rtscenes\\camera_script.txt");
 
 // Light sources:
 scene.Sources = new LinkedList<ILightSource>();
