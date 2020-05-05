@@ -244,6 +244,11 @@ namespace Rendering
             MessageBox.Show($"Error compiling scene script: {e.Message}, using default scene", "CSscript Error");
             ok = false;
           }
+          catch (AggregateException e)
+          {
+            MessageBox.Show($"Error initializing scene: {e.InnerException.Message}");
+            ok = false;
+          }
 
           if (ok)
           {
