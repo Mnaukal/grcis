@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 
 // Optional IImageFunction.
 if (outParam != null)
@@ -27,7 +28,8 @@ Util.TryParse(p, "shift", ref s);
 scene.Camera = new DoFCamera(new Vector3d(-6.0, 1.0, 0.0),
                              new Vector3d(1.0, 0.1, 0.0),
                              70.0, Vector3d.Zero, s);*/
-scene.Camera = new AnimatedCamera(new AnimatableDoFCamera(), "camera_script.txt");
+string script_file = Path.Combine(Path.GetDirectoryName(scriptFileName), "DoF_spheres.yaml");
+scene.Camera = new AnimatedCamera(new AnimatableDoFCamera(), script_file);
 
 // Light sources:
 scene.Sources = new LinkedList<ILightSource>();
