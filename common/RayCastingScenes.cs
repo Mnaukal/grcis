@@ -1159,7 +1159,7 @@ namespace Rendering
       sc.BackgroundColor = new double[] { 0.0, 0.05, 0.07 };
 
       // Camera:
-      sc.Camera = new AnimatedCamera(new AnimatableStaticCamera(), "camera_script.txt");
+      sc.Camera = new AnimatedCamera(new AnimatableStaticCamera(), "..\\..\\..\\data\\rtscenes\\camera_script.txt");
 
       // Light sources:
       sc.Sources = new LinkedList<ILightSource>();
