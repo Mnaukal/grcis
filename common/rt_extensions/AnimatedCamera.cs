@@ -112,7 +112,16 @@ namespace Rendering
         public double Height { get => animatableCamera.Height; set => animatableCamera.Height = value; }
         public double Start { get; set; }
         public double End { get; set; }
-        public double Time { get; set; }
+        public double Time
+        {
+            get => time;
+            set {
+                time = value;
+                Dictionary<string, object> currentParams = InterpolateKeyframes();
+                animatableCamera.ApplyParams(currentParams);
+            }
+        }
+        private double time;
         public object Clone ()
         {
             AnimatedCamera clonedCamera = new AnimatedCamera(this.animatableCamera);
@@ -123,6 +132,13 @@ namespace Rendering
         }
 
         public bool GetRay (double x, double y, out Vector3d p0, out Vector3d p1)
+        {
+            //Dictionary<string, object> cameraParams = InterpolateKeyframes();
+            //animatableCamera.ApplyParams(cameraParams);
+            return animatableCamera.GetRay(x, y, out p0, out p1);
+        }
+
+        private Dictionary<string, object> InterpolateKeyframes()
         {
             int i = 0;
             for (; i < keyframes.Count; i++)
@@ -150,8 +166,7 @@ namespace Rendering
                     t);
             }
 
-            animatableCamera.ApplyParams(cameraParams);
-            return animatableCamera.GetRay(x, y, out p0, out p1);
+            return cameraParams;
         }
 
         private class Keyframe
