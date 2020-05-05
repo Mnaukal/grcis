@@ -146,6 +146,11 @@ namespace Rendering
       public string sceneName;
 
       /// <summary>
+      /// Path to Scene file.
+      /// </summary>
+      public string scriptFileName;
+
+      /// <summary>
       /// Scene object to be filled.
       /// </summary>
       public IRayScene scene;
@@ -231,7 +236,8 @@ namespace Rendering
             sceneName = name,
             scene = sc,
             param = par,
-            outParam = outPar
+            outParam = outPar,
+            scriptFileName = scriptFileName
           };
 
           try
@@ -242,6 +248,11 @@ namespace Rendering
           catch (CompilationErrorException e)
           {
             MessageBox.Show($"Error compiling scene script: {e.Message}, using default scene", "CSscript Error");
+            ok = false;
+          }
+          catch (AggregateException e)
+          {
+            MessageBox.Show($"Error initializing scene: {e.InnerException.Message}");
             ok = false;
           }
 
