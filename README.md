@@ -1,3 +1,11 @@
+# RayTracer extensions:
+
+* **Animated Camera**: https://github.com/Mnaukal/grcis/tree/master/common/rt_extensions/AnimatedCamera
+* **Depth-Of-Field Camera**: https://github.com/Mnaukal/grcis/tree/master/common/rt_extensions/DoFCamera
+* **Vertigo Effect Camera**: https://github.com/Mnaukal/grcis/tree/master/common/rt_extensions/VertigoEffectCamera
+
+---
+
 # GrCis library
 
 GrCis is a C# language library supporting computer graphics courses
