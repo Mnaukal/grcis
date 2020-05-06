@@ -285,7 +285,16 @@
     <Compile Include="..\common\RenderProgress.cs">
       <Link>RenderProgress.cs</Link>
     </Compile>
-    <Compile Include="..\common\rt_extensions\AnimatedCamera.cs" />
+    <Compile Include="..\common\rt_extensions\AnimatedCamera\AnimatedCamera.cs">
+      <Link>rt_extensions\AnimatedCamera.cs</Link>
+    </Compile>
+    <Compile Include="..\common\rt_extensions\DoFCamera\AnimatableDoFCamera.cs" />
+    <Compile Include="..\common\rt_extensions\DoFCamera\DoFCamera.cs">
+      <Link>rt_extensions\DoFCamera.cs</Link>
+    </Compile>
+    <Compile Include="..\common\rt_extensions\VertigoEffectCamera\VertigoEffectCamera.cs">
+      <Link>rt_extensions\VertigoEffectCamera.cs</Link>
+    </Compile>
     <Compile Include="..\common\Scene.cs">
       <Link>Scene.cs</Link>
     </Compile>

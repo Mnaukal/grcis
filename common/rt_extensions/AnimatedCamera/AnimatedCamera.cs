@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using MathSupport;
 using OpenTK;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Globalization;
+using Rendering;
 
-namespace Rendering
+namespace DavidSosvald_MichalTopfer
 {
     public class AnimatedCamera : ICamera, ITimeDependent
     {
@@ -25,6 +25,7 @@ namespace Rendering
             ReadAndSaveCameraScript(fileName);
             Start = keyframes[0].Time;
             End = keyframes[keyframes.Count - 1].Time;
+            Time = Start;
         }
 
         private AnimatedCamera (IAnimatableCamera animatableCamera)

@@ -1,14 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using MathSupport;
 using OpenTK;
-using System.IO;
-using System.Text.RegularExpressions;
-using System.Globalization;
-using Rendering;
 
-namespace Rendering
+namespace DavidSosvald_MichalTopfer
 {
     public class VertigoEffectCamera : IAnimatableCamera
     {

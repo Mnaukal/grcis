@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using DavidSosvald_MichalTopfer;
 
 // Optional IImageFunction.
 if (outParam != null)
@@ -28,7 +29,8 @@ scene.Camera = new DoFCamera(new Vector3d(-6.0, 1.0, 0.0),
                              70.0, Vector3d.Zero, s);*/
 string script_file = Path.Combine(Path.GetDirectoryName(scriptFileName), "dof_spheres.yaml");
 scene.Camera = new AnimatedCamera(new VertigoEffectCamera(new AnimatableDoFCamera(), true, true, 8), script_file);
-(scene as ITimeDependent).End = (scene.Camera as AnimatedCamera).End;
+if (scene is ITimeDependent s)
+    s.End = (scene.Camera as AnimatedCamera).End;
 if (outParam != null)
 {
     outParam["Start"] =  (scene.Camera as AnimatedCamera).Start;
