@@ -13,7 +13,8 @@ namespace DavidSosvald_MichalTopfer
                 new AnimatedCamera.Parameter("direction", AnimatedCamera.Parsers.ParseVector3, AnimatedCamera.Interpolators.Catmull_Rom, true),
                 new AnimatedCamera.Parameter("angle", AnimatedCamera.Parsers.ParseDouble, AnimatedCamera.Interpolators.LERP),
                 new AnimatedCamera.Parameter("max_shift", AnimatedCamera.Parsers.ParseDouble, AnimatedCamera.Interpolators.LERP),
-                new AnimatedCamera.Parameter("focus", AnimatedCamera.Parsers.ParseDouble, AnimatedCamera.Interpolators.LERP)
+                new AnimatedCamera.Parameter("focus", AnimatedCamera.Parsers.ParseDouble, AnimatedCamera.Interpolators.LERP),
+                new AnimatedCamera.Parameter("focus_point", AnimatedCamera.Parsers.ParseVector3, AnimatedCamera.Interpolators.Catmull_Rom),
             };
         }
 
@@ -29,6 +30,8 @@ namespace DavidSosvald_MichalTopfer
                     max_shift = (double)p["max_shift"];
                 if (p.ContainsKey("focus"))
                     focus_distance = (double)p["focus"];
+                else if (p.ContainsKey("focus_point"))
+                    SetFocusPoint((Vector3d)p["focus"]);
             }
             catch (KeyNotFoundException)
             {
