@@ -23,16 +23,16 @@ namespace DavidSosvald_MichalTopfer
             this.target_width = target_width;
         }
 
-        public virtual AnimatedCamera.Parameter[] GetParams ()
+        public virtual Animator.Parameter[] GetParams ()
         {
             var innerCameraParams = innerCamera.GetParams().ToList();
-            innerCameraParams.Add(new AnimatedCamera.Parameter("vertigo", AnimatedCamera.Parsers.ParseDouble, AnimatedCamera.Interpolators.LERP));
-            innerCameraParams.Add(new AnimatedCamera.Parameter("target", AnimatedCamera.Parsers.ParseVector3, AnimatedCamera.Interpolators.Catmull_Rom, true));
-            innerCameraParams.Add(new AnimatedCamera.Parameter("target_width", AnimatedCamera.Parsers.ParseDouble, AnimatedCamera.Interpolators.LERP, target_width < 0)); // if target_width wasn't specified in the constructor, it is a required param
+            innerCameraParams.Add(new Animator.Parameter("vertigo", Animator.Parsers.ParseDouble, Animator.Interpolators.LERP));
+            innerCameraParams.Add(new Animator.Parameter("target", Animator.Parsers.ParseVector3, Animator.Interpolators.Catmull_Rom, true));
+            innerCameraParams.Add(new Animator.Parameter("target_width", Animator.Parsers.ParseDouble, Animator.Interpolators.LERP, target_width < 0)); // if target_width wasn't specified in the constructor, it is a required param
             if (!innerCameraParams.Any(p => p.Name == "position"))
-                innerCameraParams.Add(new AnimatedCamera.Parameter("position", AnimatedCamera.Parsers.ParseVector3, AnimatedCamera.Interpolators.Catmull_Rom, true));
+                innerCameraParams.Add(new Animator.Parameter("position", Animator.Parsers.ParseVector3, Animator.Interpolators.Catmull_Rom, true));
             if (!innerCameraParams.Any(p => p.Name == "angle"))
-                innerCameraParams.Add(new AnimatedCamera.Parameter("angle", AnimatedCamera.Parsers.ParseDouble, AnimatedCamera.Interpolators.LERP));
+                innerCameraParams.Add(new Animator.Parameter("angle", Animator.Parsers.ParseDouble, Animator.Interpolators.LERP));
 
             return innerCameraParams.ToArray();
         }

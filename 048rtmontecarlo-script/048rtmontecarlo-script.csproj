@@ -285,7 +285,7 @@
     <Compile Include="..\common\RenderProgress.cs">
       <Link>RenderProgress.cs</Link>
     </Compile>
-    <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-AnimatedCamera\AnimatedCamera.cs">
+    <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-Animator\Animator.cs">
       <Link>rt_extensions\AnimatedCamera.cs</Link>
     </Compile>
     <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-DoFCamera\AnimatableDoFCamera.cs" />

@@ -6,15 +6,15 @@ namespace DavidSosvald_MichalTopfer
 {
     public class AnimatableDoFCamera : DoFCamera, IAnimatableCamera
     {
-        public virtual AnimatedCamera.Parameter[] GetParams ()
+        public virtual Animator.Parameter[] GetParams ()
         {
-            return new AnimatedCamera.Parameter[] {
-                new AnimatedCamera.Parameter("position", AnimatedCamera.Parsers.ParseVector3, AnimatedCamera.Interpolators.Catmull_Rom, true),
-                new AnimatedCamera.Parameter("direction", AnimatedCamera.Parsers.ParseVector3, AnimatedCamera.Interpolators.Catmull_Rom, true),
-                new AnimatedCamera.Parameter("angle", AnimatedCamera.Parsers.ParseDouble, AnimatedCamera.Interpolators.LERP),
-                new AnimatedCamera.Parameter("max_shift", AnimatedCamera.Parsers.ParseDouble, AnimatedCamera.Interpolators.LERP),
-                new AnimatedCamera.Parameter("focus", AnimatedCamera.Parsers.ParseDouble, AnimatedCamera.Interpolators.LERP),
-                new AnimatedCamera.Parameter("focus_point", AnimatedCamera.Parsers.ParseVector3, AnimatedCamera.Interpolators.Catmull_Rom),
+            return new Animator.Parameter[] {
+                new Animator.Parameter("position", Animator.Parsers.ParseVector3, Animator.Interpolators.Catmull_Rom, true),
+                new Animator.Parameter("direction", Animator.Parsers.ParseVector3, Animator.Interpolators.Catmull_Rom, true),
+                new Animator.Parameter("angle", Animator.Parsers.ParseDouble, Animator.Interpolators.LERP),
+                new Animator.Parameter("max_shift", Animator.Parsers.ParseDouble, Animator.Interpolators.LERP),
+                new Animator.Parameter("focus", Animator.Parsers.ParseDouble, Animator.Interpolators.LERP),
+                new Animator.Parameter("focus_point", Animator.Parsers.ParseVector3, Animator.Interpolators.Catmull_Rom),
             };
         }
 

@@ -9,9 +9,9 @@ using Rendering;
 
 namespace DavidSosvald_MichalTopfer
 {
-    public class AnimatedCamera : ICamera, ITimeDependent
+    public class Animator : ITimeDependent
     {
-        private IAnimatableCamera animatableCamera;
+        private List<IAnimatable> animatables;
         private Dictionary<string, Parameter> parameters;
         private List<Keyframe> keyframes = new List<Keyframe>();
 
@@ -19,23 +19,28 @@ namespace DavidSosvald_MichalTopfer
         private static char[] commaSeparator = {','};
 
 #if DEBUG
-        int serial = 0;
+        private static volatile int nextSerial = 0;
+        private readonly int serial = nextSerial++;
         public int getSerial () => serial;
 #endif
 
-        public AnimatedCamera (IAnimatableCamera animatableCamera, string fileName)
+        public Animator (IEnumerable<IAnimatable> animatables, string keyframesFile)
         {
-            this.animatableCamera = animatableCamera;
-            parameters = animatableCamera.GetParams().ToDictionary(p => p.Name, p => p);
-            ReadAndSaveCameraScript(fileName);
+            this.animatables = animatables.ToList();
+            parameters = animatables.SelectMany(a => a.GetParams()).ToDictionary(p => p.Name, p => p);
+            ReadAndSaveCameraScript(keyframesFile);
             Start = keyframes[0].Time;
             End = keyframes[keyframes.Count - 1].Time;
             Time = Start;
         }
 
-        private AnimatedCamera (IAnimatableCamera animatableCamera)
+        public Animator (IAnimatable animatable, string keyframesFile)
+            : this(new IAnimatable[] { animatable }, keyframesFile)
+        { }
+
+        private Animator (List<IAnimatable> animatables)
         {
-            this.animatableCamera = animatableCamera;
+            this.animatables = animatables;
         }
 
         private void ReadAndSaveCameraScript (string fileName)
@@ -113,9 +118,6 @@ namespace DavidSosvald_MichalTopfer
             return copy;
         }
 
-        public double AspectRatio { get => animatableCamera.AspectRatio; set => animatableCamera.AspectRatio = value; }
-        public double Width { get => animatableCamera.Width; set => animatableCamera.Width = value; }
-        public double Height { get => animatableCamera.Height; set => animatableCamera.Height = value; }
         public double Start { get; set; }
         public double End { get; set; }
         public double Time
@@ -124,27 +126,26 @@ namespace DavidSosvald_MichalTopfer
             set {
                 time = value;
                 Dictionary<string, object> currentParams = InterpolateKeyframes();
-                animatableCamera.ApplyParams(currentParams);
+                foreach (IAnimatable a in animatables)
+                    a.ApplyParams(currentParams);
             }
         }
         private double time;
         public object Clone ()
         {
-            AnimatedCamera clonedCamera = new AnimatedCamera(this.animatableCamera);
-            clonedCamera.Start = this.Start;
-            clonedCamera.End = this.End;
-            clonedCamera.Time = this.Time;
-#if DEBUG
-            clonedCamera.serial = this.serial + 1; // TODO: make serial unique for each copy
-#endif
-            return clonedCamera;
-        }
-
-        public bool GetRay (double x, double y, out Vector3d p0, out Vector3d p1)
-        {
-            //Dictionary<string, object> cameraParams = InterpolateKeyframes();
-            //animatableCamera.ApplyParams(cameraParams);
-            return animatableCamera.GetRay(x, y, out p0, out p1);
+            List<IAnimatable> clonedAnimatables = new List<IAnimatable>(animatables.Count);
+            foreach (IAnimatable a in animatables)
+            {
+                if (a is ITimeDependent t)
+                    clonedAnimatables.Add((IAnimatable)t.Clone());
+                else
+                    clonedAnimatables.Add(a);
+            }
+            Animator cloned = new Animator(clonedAnimatables);
+            cloned.Start = this.Start;
+            cloned.End = this.End;
+            cloned.Time = this.Time;
+            return cloned;
         }
 
         private Dictionary<string, object> InterpolateKeyframes()
@@ -305,14 +306,37 @@ namespace DavidSosvald_MichalTopfer
         }
     }
 
+    public class CameraAnimator : Animator, ICamera
+    {
+        ICamera camera;
+
+        public CameraAnimator (IAnimatableCamera camera, IEnumerable<IAnimatable> animatables, string keyframesFile)
+            : base (animatables.Concat(new[] { camera }), keyframesFile)
+        {
+            this.camera = camera;
+        }
+
+        public CameraAnimator (IAnimatableCamera camera, string keyframesFile)
+            : base(camera, keyframesFile)
+        {
+            this.camera = camera;
+        }
+
+        public double AspectRatio { get => camera.AspectRatio; set => camera.AspectRatio = value; }
+        public double Width { get => camera.Width; set => camera.Width = value; }
+        public double Height { get => camera.Height; set => camera.Height = value; }
+
+        public bool GetRay (double x, double y, out Vector3d p0, out Vector3d p1) => camera.GetRay(x, y, out p0, out p1);
+    }
+
     public class AnimatableStaticCamera : StaticCamera, IAnimatableCamera
     {
-        public virtual AnimatedCamera.Parameter[] GetParams ()
+        public virtual Animator.Parameter[] GetParams ()
         {
-            return new AnimatedCamera.Parameter[] {
-                new AnimatedCamera.Parameter("position", AnimatedCamera.Parsers.ParseVector3, AnimatedCamera.Interpolators.Catmull_Rom, true),
-                new AnimatedCamera.Parameter("direction", AnimatedCamera.Parsers.ParseVector3, AnimatedCamera.Interpolators.Catmull_Rom, true),
-                new AnimatedCamera.Parameter("angle", AnimatedCamera.Parsers.ParseDouble, AnimatedCamera.Interpolators.LERP)
+            return new Animator.Parameter[] {
+                new Animator.Parameter("position", Animator.Parsers.ParseVector3, Animator.Interpolators.Catmull_Rom, true),
+                new Animator.Parameter("direction", Animator.Parsers.ParseVector3, Animator.Interpolators.Catmull_Rom, true),
+                new Animator.Parameter("angle", Animator.Parsers.ParseDouble, Animator.Interpolators.LERP)
             };
         }
 
@@ -333,9 +357,12 @@ namespace DavidSosvald_MichalTopfer
         }
     }
 
-    public interface IAnimatableCamera : ICamera
+    public interface IAnimatable
     {
-        AnimatedCamera.Parameter[] GetParams ();
+        Animator.Parameter[] GetParams ();
         void ApplyParams (Dictionary<string, object> p);
     }
+
+    public interface IAnimatableCamera : IAnimatable, ICamera
+    { }
 }
