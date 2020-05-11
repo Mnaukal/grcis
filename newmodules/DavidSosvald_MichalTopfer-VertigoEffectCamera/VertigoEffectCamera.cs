@@ -23,7 +23,7 @@ namespace DavidSosvald_MichalTopfer
             this.target_width = target_width;
         }
 
-        public virtual Animator.Parameter[] GetParams ()
+        public virtual IEnumerable<Animator.Parameter> GetParams ()
         {
             var innerCameraParams = innerCamera.GetParams().ToList();
             innerCameraParams.Add(new Animator.Parameter("vertigo", Animator.Parsers.ParseDouble, Animator.Interpolators.LERP));
@@ -34,7 +34,7 @@ namespace DavidSosvald_MichalTopfer
             if (!innerCameraParams.Any(p => p.Name == "angle"))
                 innerCameraParams.Add(new Animator.Parameter("angle", Animator.Parsers.ParseDouble, Animator.Interpolators.LERP));
 
-            return innerCameraParams.ToArray();
+            return innerCameraParams; 
         }
 
         public virtual void ApplyParams (Dictionary<string, object> p)

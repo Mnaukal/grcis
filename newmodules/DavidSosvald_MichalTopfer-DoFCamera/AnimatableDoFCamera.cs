@@ -6,7 +6,7 @@ namespace DavidSosvald_MichalTopfer
 {
     public class AnimatableDoFCamera : DoFCamera, IAnimatableCamera
     {
-        public virtual Animator.Parameter[] GetParams ()
+        public virtual IEnumerable<Animator.Parameter> GetParams ()
         {
             return new Animator.Parameter[] {
                 new Animator.Parameter("position", Animator.Parsers.ParseVector3, Animator.Interpolators.Catmull_Rom, true),

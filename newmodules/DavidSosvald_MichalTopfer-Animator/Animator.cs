@@ -331,7 +331,7 @@ namespace DavidSosvald_MichalTopfer
 
     public class AnimatableStaticCamera : StaticCamera, IAnimatableCamera
     {
-        public virtual Animator.Parameter[] GetParams ()
+        public virtual IEnumerable<Animator.Parameter> GetParams ()
         {
             return new Animator.Parameter[] {
                 new Animator.Parameter("position", Animator.Parsers.ParseVector3, Animator.Interpolators.Catmull_Rom, true),
@@ -359,7 +359,7 @@ namespace DavidSosvald_MichalTopfer
 
     public interface IAnimatable
     {
-        Animator.Parameter[] GetParams ();
+        IEnumerable<Animator.Parameter> GetParams ();
         void ApplyParams (Dictionary<string, object> p);
     }
 
