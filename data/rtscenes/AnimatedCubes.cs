@@ -61,7 +61,7 @@ Cube c;
 
 // animated cube
 c = new Cube();
-AnimatableISceneNode movingCube = new AnimatableISceneNode(c, "t1");
+AnimatableISceneNode movingCube = new AnimatableISceneNode(c, "t1", "r1", "s1");
 root.InsertChild(c, Matrix4d.Identity);
 c.SetAttribute(PropertyName.MATERIAL, r);
 
@@ -107,3 +107,10 @@ c.SetAttribute(PropertyName.MATERIAL, pm);
 
 // Camera:
 scene.Camera = new CameraAnimator(new AnimatableStaticCamera(), new IAnimatable[] { movingCube }, "..\\..\\..\\data\\rtscenes\\AnimatedCubes.yaml");
+if (scene is ITimeDependent s)
+    s.End = (scene.Camera as ITimeDependent).End;
+if (context != null)
+{
+    context["Start"] = (scene.Camera as ITimeDependent).Start;
+    context["End"] = (scene.Camera as ITimeDependent).End;
+}

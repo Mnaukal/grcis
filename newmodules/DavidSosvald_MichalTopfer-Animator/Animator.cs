@@ -166,6 +166,8 @@ namespace DavidSosvald_MichalTopfer
             Keyframe next = i < keyframes.Count - 1 ?  keyframes[i+1] : keyframes[keyframes.Count - 1];
             Keyframe later = i < keyframes.Count - 2 ? keyframes[i + 2] : keyframes[keyframes.Count - 1];
             double t = (Time - current.Time) / (next.Time - current.Time);
+            if (double.IsNaN(t) && next.Time == current.Time)
+                t = 1;
 
             var cameraParams = new Dictionary<string, object>();
 
@@ -386,12 +388,14 @@ namespace DavidSosvald_MichalTopfer
     public class AnimatableISceneNode : IAnimatable
     {
         ISceneNode node;
-        string translationParamName;
+        string translationParamName, rotationParamName, scaleParamName;
 
-        public AnimatableISceneNode(ISceneNode node, string translationParamName = null)
+        public AnimatableISceneNode(ISceneNode node, string translationParamName = null, string rotationParamName = null, string scaleParamName = null)
         {
             this.node = node;
             this.translationParamName = translationParamName;
+            this.rotationParamName = rotationParamName;
+            this.scaleParamName = scaleParamName;
         }
 
         public IEnumerable<Animator.Parameter> GetParams ()
@@ -404,13 +408,21 @@ namespace DavidSosvald_MichalTopfer
 
             if (translationParamName != null)
                 p.Add(new Animator.Parameter(translationParamName, Animator.Parsers.ParseVector3, Animator.Interpolators.Catmull_Rom, true));
+            if (rotationParamName != null)
+                p.Add(new Animator.Parameter(rotationParamName, Animator.Parsers.ParseVector3, Animator.Interpolators.Catmull_Rom, true));
+            if (scaleParamName != null)
+                p.Add(new Animator.Parameter(scaleParamName, Animator.Parsers.ParseVector3, Animator.Interpolators.Catmull_Rom, true));
             return p;
         }
 
         public void ApplyParams (Dictionary<string, object> p)
         {
-            Vector3d translation = (Vector3d)p[translationParamName];
-            node.ToParent = Matrix4d.CreateTranslation(translation);
+            Vector3d translation = translationParamName != null ? (Vector3d)p[translationParamName] : Vector3d.Zero;
+            Vector3d rotation = rotationParamName != null ? (Vector3d)p[rotationParamName] : Vector3d.Zero;
+            Vector3d scale = scaleParamName != null ? (Vector3d)p[scaleParamName] : new Vector3d(1,1,1);
+
+
+            node.ToParent = Matrix4d.Scale(scale) * Matrix4d.Rotate(Quaterniond.FromEulerAngles(rotation)) * Matrix4d.CreateTranslation(translation);
             node.FromParent = node.ToParent.Inverted();
 
             if (node is IAnimatable n)
