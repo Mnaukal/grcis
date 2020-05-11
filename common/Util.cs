@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis.CSharp;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -202,6 +203,20 @@ namespace Utilities
           sb.Append(ch);
 
       return sb.Length == 0 ? "_" : sb.ToString();
+    }
+
+    /// <summary>
+    /// Copies one color array to another.
+    /// </summary>
+    /// <param name="src">Source array</param>
+    /// <param name="dst">Destination array</param>
+    public static void ColorCopy (double[] src, double[] dst)
+    {
+      Debug.Assert(src != null && dst != null);
+
+      Array.Copy(src, dst, Math.Min(src.Length, dst.Length));
+      if (src.Length < dst.Length)
+        Array.Clear(dst, src.Length, dst.Length - src.Length);
     }
 
     /// <summary>
@@ -1218,15 +1233,14 @@ namespace Utilities
     /// </summary>
     public static int KeyComparer (string a, string b)
     {
-      long ai, bi;
-      if (long.TryParse(a, out ai))
+      if (long.TryParse(a, out long ai))
       {
-        if (long.TryParse(b, out bi))
+        if (long.TryParse(b, out long bi))
           return (ai < bi) ? -1 : ((ai > bi) ? 1 : 0);
         return -1;
       }
 
-      if (long.TryParse(b, out bi))
+      if (long.TryParse(b, out _))
         return 1;
 
       if ("-" == a)
@@ -1245,8 +1259,8 @@ namespace Utilities
     /// <param name="separator">Optional specification of the separator character.</param>
     public static Dictionary<string, string> ParseKeyValueList (string str, char separator = COMMA)
     {
-      int                        len    = str.Length;
-      int                        start  = 0;
+      int len = str.Length;
+      int start = 0;
       Dictionary<string, string> result = new Dictionary<string, string>();
 
       while (start < len)
@@ -1276,14 +1290,216 @@ namespace Utilities
     }
 
     /// <summary>
+    /// Parses integer value from the string->object dictionary.
+    /// </summary>
+    /// <returns>True if everything went well, keeps the original value otherwise.</returns>
+    public static bool TryParse (Dictionary<string, object> rec, string key, ref int val)
+    {
+      if (!rec.TryGetValue(key, out object oval))
+        return false;
+
+      if (oval is int oint)
+      {
+        val = oint;
+        return true;
+      }
+
+      if (oval is long olong)
+      {
+        val = (int)olong;
+        return true;
+      }
+
+      if (oval is short oshort)
+      {
+        val = oshort;
+        return true;
+      }
+
+      if (oval is byte obyte)
+      {
+        val = obyte;
+        return true;
+      }
+
+      if (oval is string ostring &&
+          int.TryParse(ostring, out int v))
+      {
+        val = v;
+        return true;
+      }
+
+      return false;
+    }
+
+    /// <summary>
+    /// Parses long value from the string->object dictionary.
+    /// </summary>
+    /// <returns>True if everything went well, keeps the original value otherwise.</returns>
+    public static bool TryParse (Dictionary<string, object> rec, string key, ref long val)
+    {
+      if (!rec.TryGetValue(key, out object oval))
+        return false;
+
+      if (oval is long olong)
+      {
+        val = olong;
+        return true;
+      }
+
+      if (oval is int oint)
+      {
+        val = oint;
+        return true;
+      }
+
+      if (oval is short oshort)
+      {
+        val = oshort;
+        return true;
+      }
+
+      if (oval is byte obyte)
+      {
+        val = obyte;
+        return true;
+      }
+
+      if (oval is string ostring &&
+          long.TryParse(ostring, out long v))
+      {
+        val = v;
+        return true;
+      }
+
+      return false;
+    }
+
+    /// <summary>
+    /// Parses float value from the string->object dictionary.
+    /// </summary>
+    /// <returns>True if everything went well, keeps the original value otherwise.</returns>
+    public static bool TryParse (Dictionary<string, object> rec, string key, ref float val)
+    {
+      if (!rec.TryGetValue(key, out object oval))
+        return false;
+
+      if (oval is float ofloat)
+      {
+        val = ofloat;
+        return true;
+      }
+
+      if (oval is double odouble)
+      {
+        val = (float)odouble;
+        return true;
+      }
+
+      if (oval is int oint)
+      {
+        val = oint;
+        return true;
+      }
+
+      if (oval is long olong)
+      {
+        val = olong;
+        return true;
+      }
+
+      if (oval is short oshort)
+      {
+        val = oshort;
+        return true;
+      }
+
+      if (oval is byte obyte)
+      {
+        val = obyte;
+        return true;
+      }
+
+      if (oval is string ostring &&
+          float.TryParse(ostring, NumberStyles.Float, CultureInfo.InvariantCulture, out float v))
+      {
+        val = v;
+        return true;
+      }
+
+      return false;
+    }
+
+    /// <summary>
+    /// Parses double value from the string->object dictionary.
+    /// </summary>
+    /// <returns>True if everything went well, keeps the original value otherwise.</returns>
+    public static bool TryParse (Dictionary<string, object> rec, string key, ref double val)
+    {
+      if (!rec.TryGetValue(key, out object oval))
+        return false;
+
+      if (oval is double odouble)
+      {
+        val = odouble;
+        return true;
+      }
+
+      if (oval is float ofloat)
+      {
+        val = ofloat;
+        return true;
+      }
+
+      if (oval is int oint)
+      {
+        val = oint;
+        return true;
+      }
+
+      if (oval is long olong)
+      {
+        val = olong;
+        return true;
+      }
+
+      if (oval is short oshort)
+      {
+        val = oshort;
+        return true;
+      }
+
+      if (oval is byte obyte)
+      {
+        val = obyte;
+        return true;
+      }
+
+      if (oval is string ostring &&
+          double.TryParse(ostring, NumberStyles.Float, CultureInfo.InvariantCulture, out double v))
+      {
+        val = v;
+        return true;
+      }
+
+      return false;
+    }
+
+    /// <summary>
     /// Parses integer value from the dictionary.
     /// </summary>
-    /// <returns>True if everything went well.</returns>
-    public static bool TryParseInt (Dictionary<string, string> rec, string key, ref int val)
+    /// <returns>True if everything went well, keeps the original value otherwise.</returns>
+    public static bool TryParse (Dictionary<string, string> rec, string key, ref int val)
     {
-      string sval;
-      return (rec.TryGetValue(key, out sval) &&
-              int.TryParse(sval, out val));
+      if (rec != null &&
+          rec.TryGetValue(key, out string sval) &&
+          int.TryParse(sval, out int v))
+      {
+        val = v;
+        return true;
+      }
+
+      return false;
     }
 
     /// <summary>
@@ -1292,15 +1508,16 @@ namespace Utilities
     /// <returns>True if everything went well.</returns>
     public static bool TryParseIntRange (Dictionary<string, string> rec, string key, ref int val)
     {
-      string sval;
-      if (!rec.TryGetValue(key, out sval)) return false;
+      if (rec == null ||
+          !rec.TryGetValue(key, out string sval))
+        return false;
+
       int pos = sval.IndexOf('-');
       if (pos < 0)
         return int.TryParse(sval, out val);
 
-      int  val1 = 0, val2 = 0;
-      bool was1 = int.TryParse(sval.Substring(0, pos), out val1);
-      bool was2 = int.TryParse(sval.Substring(pos + 1), out val2);
+      bool was1 = int.TryParse(sval.Substring(0, pos), out int val1);
+      bool was2 = int.TryParse(sval.Substring(pos + 1), out int val2);
 
       if (was1)
       {
@@ -1316,37 +1533,20 @@ namespace Utilities
     }
 
     /// <summary>
-    /// Parses integer value from the dictionary.
-    /// </summary>
-    /// <returns>True if everything went well, keeps the original value otherwise.</returns>
-    public static bool TryParse (Dictionary<string, string> rec, string key, ref int val)
-    {
-      string sval;
-      int    v;
-      if (rec == null ||
-          !rec.TryGetValue(key, out sval) ||
-          !int.TryParse(sval, out v))
-        return false;
-
-      val = v;
-      return true;
-    }
-
-    /// <summary>
     /// Parses long value from the dictionary.
     /// </summary>
     /// <returns>True if everything went well, keeps the original value otherwise.</returns>
     public static bool TryParse (Dictionary<string, string> rec, string key, ref long val)
     {
-      string sval;
-      long   v;
-      if (rec == null ||
-          !rec.TryGetValue(key, out sval) ||
-          !long.TryParse(sval, out v))
-        return false;
+      if (rec != null &&
+          rec.TryGetValue(key, out string sval) &&
+          long.TryParse(sval, out long v))
+      {
+        val = v;
+        return true;
+      }
 
-      val = v;
-      return true;
+      return false;
     }
 
     /// <summary>
@@ -1355,15 +1555,15 @@ namespace Utilities
     /// <returns>True if everything went well, keeps the original value otherwise.</returns>
     public static bool TryParse (Dictionary<string, string> rec, string key, ref float val)
     {
-      string sval;
-      float  v;
-      if (rec == null ||
-          !rec.TryGetValue(key, out sval) ||
-          !float.TryParse(sval, NumberStyles.Number, CultureInfo.InvariantCulture, out v))
-        return false;
+      if (rec != null &&
+          rec.TryGetValue(key, out string sval) &&
+          float.TryParse(sval, NumberStyles.Number, CultureInfo.InvariantCulture, out float v))
+      {
+        val = v;
+        return true;
+      }
 
-      val = v;
-      return true;
+      return false;
     }
 
     /// <summary>
@@ -1410,15 +1610,15 @@ namespace Utilities
     /// <returns>True if everything went well, keeps the original value otherwise.</returns>
     public static bool TryParse (Dictionary<string, string> rec, string key, ref double val)
     {
-      string sval;
-      double v;
-      if (rec == null ||
-          !rec.TryGetValue(key, out sval) ||
-          !double.TryParse(sval, NumberStyles.Number, CultureInfo.InvariantCulture, out v))
-        return false;
+      if (rec != null &&
+          rec.TryGetValue(key, out string sval) &&
+          double.TryParse(sval, NumberStyles.Number, CultureInfo.InvariantCulture, out double v))
+      {
+        val = v;
+        return true;
+      }
 
-      val = v;
-      return true;
+      return false;
     }
 
     /// <summary>
@@ -1428,15 +1628,9 @@ namespace Utilities
     /// <returns>True if everything went well, keeps the original value otherwise.</returns>
     public static bool TryParseRational (Dictionary<string, string> rec, string key, ref double val)
     {
-      string sval;
-      double v = 0.0;
-      if (rec == null ||
-          !rec.TryGetValue(key, out sval) ||
-          !ParseRational(sval, ref v))
-        return false;
-
-      val = v;
-      return true;
+      return rec != null &&
+             rec.TryGetValue(key, out string sval) &&
+             ParseRational(sval, ref val);
     }
 
     /// <summary>
@@ -1445,9 +1639,8 @@ namespace Utilities
     /// <returns>True if everything went well, keeps the original value otherwise.</returns>
     public static bool TryParse (Dictionary<string, string> rec, string key, ref bool val)
     {
-      string sval;
       if (rec == null ||
-          !rec.TryGetValue(key, out sval))
+          !rec.TryGetValue(key, out string sval))
         return false;
 
       val = string.IsNullOrEmpty(sval) ||
@@ -1461,9 +1654,8 @@ namespace Utilities
     /// <returns>True if everything went well, keeps the original value otherwise.</returns>
     public static bool TryParse (Dictionary<string, string> rec, string key, ref List<double> val, char sep = COMMA)
     {
-      string sval;
       if (rec == null ||
-          !rec.TryGetValue(key, out sval))
+          !rec.TryGetValue(key, out string sval))
         return false;
 
       val = ParseDoubleList(sval, sep);
@@ -1476,9 +1668,8 @@ namespace Utilities
     /// <returns>True if everything went well, keeps the original value otherwise.</returns>
     public static bool TryParse (Dictionary<string, string> rec, string key, ref List<int> val, char sep = COMMA)
     {
-      string sval;
       if (rec == null ||
-          !rec.TryGetValue(key, out sval))
+          !rec.TryGetValue(key, out string sval))
         return false;
 
       val = ParseIntList(sval, sep);
@@ -1490,10 +1681,10 @@ namespace Utilities
     /// </summary>
     public static string FirstDefined (Dictionary<string, string> rec, string[] keys)
     {
-      string val;
       foreach (var key in keys)
-        if (rec.TryGetValue(key, out val))
+        if (rec.TryGetValue(key, out string val))
           return val;
+
       return null;
     }
 
@@ -1502,11 +1693,11 @@ namespace Utilities
     /// </summary>
     public static string FirstDefinedNonempty (Dictionary<string, string> rec, string[] keys)
     {
-      string val;
       foreach (var key in keys)
-        if (rec.TryGetValue(key, out val) &&
-             val.Length > 0)
+        if (rec.TryGetValue(key, out string val) &&
+            val.Length > 0)
           return val;
+
       return null;
     }
 
@@ -1515,11 +1706,11 @@ namespace Utilities
     /// </summary>
     public static string FirstDefinedKey (Dictionary<string, string> rec, string[] keys)
     {
-      string val;
       foreach (var key in keys)
-        if (rec.TryGetValue(key, out val) &&
+        if (rec.TryGetValue(key, out string val) &&
             val.Length > 0)
           return key;
+
       return null;
     }
 
@@ -1528,9 +1719,8 @@ namespace Utilities
     /// </summary>
     public static string FirstDefinedLetters (Dictionary<string, string> rec, string[] keys)
     {
-      string val;
       foreach (var key in keys)
-        if (rec.TryGetValue(key, out val))
+        if (rec.TryGetValue(key, out string val))
         {
           int len = val.Length;
           int i   = 0;
@@ -1547,9 +1737,8 @@ namespace Utilities
     /// </summary>
     public static string FirstDefinedInteger (Dictionary<string, string> rec, string[] keys)
     {
-      string val;
       foreach (var key in keys)
-        if (rec.TryGetValue(key, out val))
+        if (rec.TryGetValue(key, out string val))
         {
           val = NumberPrefix(val);
           if (val.Length > 0)
@@ -1585,7 +1774,7 @@ namespace Utilities
       }
 
       StringBuilder sb = null;
-      string        seg;
+      string seg;
       do
       {
         int pos = str.IndexOf('|', start);
@@ -1670,7 +1859,7 @@ namespace Utilities
         }
 
         if (end < 0) end = len;
-        int eq           = str.IndexOf('=', start);
+        int eq = str.IndexOf('=', start);
         if (eq != start)
         {
           if (eq < 0 || eq > end) // only key (tag) is present, assume empty value..
@@ -1741,7 +1930,9 @@ namespace Utilities
       if (n < 8192L) return $"{n}K";
       n >>= 10;
       if (n < 8192L) return $"{n}M";
-      return $"{n >> 10}G";
+      n >>= 10;
+      if (n < 8192L) return $"{n}G";
+      return $"{n >> 10}T";
     }
 
     /// <summary>

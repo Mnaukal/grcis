@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using OpenTK;
+using Utilities;
 
 namespace Rendering
 {
@@ -40,7 +41,13 @@ namespace Rendering
 
     protected IRayScene scene;
 
-    public RayCasting (IRayScene sc)
+    public IRayScene Scene
+    {
+      get => scene;
+      set => scene = value;
+    }
+
+    public RayCasting (IRayScene sc = null)
     {
       scene = sc;
     }
@@ -67,7 +74,7 @@ namespace Rendering
       Intersection i = Intersection.FirstIntersection(intersections, ref p1);
       if (i == null) // no intersection -> background color
       {
-        Array.Copy(scene.BackgroundColor, color, bands);
+        Util.ColorCopy(scene.BackgroundColor, color);
         return 0L;
       }
 
@@ -85,7 +92,7 @@ namespace Rendering
       // terminate if light sources are missing
       if (scene.Sources == null || scene.Sources.Count < 1)
       {
-        Array.Copy(i.SurfaceColor, color, bands);
+        Util.ColorCopy(i.SurfaceColor, color);
         return hash;
       }
 

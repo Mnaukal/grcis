@@ -44,7 +44,7 @@ namespace Rendering
   public delegate bool ThreadSelector (long unit);
 
   /// <summary>
-  /// Algorithm capable of synthesizing raster image from virtual 3D scene.
+  /// Algorithm capable of synthesizing raster image from other representation (e.g. IImageFunction).
   /// Usually associated with an IImageFunction object (which does the actual job).
   /// </summary>
   public interface IRenderer
@@ -73,6 +73,13 @@ namespace Rendering
     /// Current progress object (can be null).
     /// </summary>
     Progress ProgressData { get; set; }
+
+    /// <summary>
+    /// Sample-based rendering specifics: rendered image is defined by
+    /// a continuous-argument image function.
+    /// Need not be used if IRenderer is not image-based.
+    /// </summary>
+    IImageFunction ImageFunction { get; set; }
 
     /// <summary>
     /// Renders the single pixel of an image.
@@ -239,6 +246,19 @@ namespace Rendering
   }
 
   /// <summary>
+  /// Object providing bacground color for a ray-based rendering.
+  /// </summary>
+  public interface IBackground
+  {
+    /// <summary>
+    /// Returns background color = function of direction vector.
+    /// </summary>
+    /// <param name="p1">Direction vector</param>
+    /// <param name="c">Pre-allocated output color</param>
+    long GetColor (Vector3d p1, double[] c);
+  }
+
+  /// <summary>
   /// Data container for Ray-based scene rendering: complete scene definition including camera.
   /// </summary>
   public interface IRayScene
@@ -249,7 +269,12 @@ namespace Rendering
     IIntersectable Intersectable { get; set; }
 
     /// <summary>
-    /// Background color.
+    /// Background color object.
+    /// </summary>
+    IBackground Background { get; set; }
+
+    /// <summary>
+    /// Constant background color.
     /// </summary>
     double[] BackgroundColor { get; set; }
 
@@ -270,6 +295,13 @@ namespace Rendering
   /// </summary>
   public interface ITimeDependent : ICloneable
   {
+#if DEBUG
+    /// <summary>
+    /// Debugging - tracking of object instances/clones.
+    /// </summary>
+    int getSerial ();
+#endif
+
     /// <summary>
     /// Starting (minimal) time in seconds.
     /// </summary>

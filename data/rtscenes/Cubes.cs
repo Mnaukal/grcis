@@ -1,12 +1,31 @@
-using System.Collections.Generic;
+//////////////////////////////////////////////////
+// Preprocessing stage support.
+bool preprocessing = false;
 
-// Optional IImageFunction.
-if (outParam != null)
+if (context != null)
 {
-  outParam["Algorithm"] = new RayTracing(scene);
+  // context["ToolTip"] indicates whether the script is running for the first time (preprocessing) or for regular rendering.
+  preprocessing = !context.ContainsKey(PropertyName.CTX_TOOLTIP);
+  if (preprocessing)
+  {
+    context[PropertyName.CTX_TOOLTIP] = "n=<double> (index of refraction)\rmat={mirror|glass}}";
+
+    // TODO: put scene preprocessing code here
+    // Store results in any context[] object, sunsequent calls will find it there..
+
+    return;
+  }
+
+  // Optional IImageFunction.
+  context[PropertyName.CTX_ALGORITHM] = new RayTracing();
 }
 
+if (scene.BackgroundColor != null)
+  return;    // scene can be shared!
+
+//////////////////////////////////////////////////
 // CSG scene.
+
 CSGInnerNode root = new CSGInnerNode(SetOperation.Union);
 root.SetAttribute(PropertyName.REFLECTANCE_MODEL, new PhongModel());
 root.SetAttribute(PropertyName.MATERIAL, new PhongMaterial(new double[] {1.0, 0.6, 0.1}, 0.1, 0.8, 0.2, 16));

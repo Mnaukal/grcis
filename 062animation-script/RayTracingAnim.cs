@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
-using System.Diagnostics;
-using OpenTK;
+﻿using OpenTK;
 using Rendering;
+using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace _062animation
 {
@@ -10,36 +10,59 @@ namespace _062animation
     /// <summary>
     /// Initialize rendering parameters.
     /// </summary>
-    public static void InitializeParams ( string[] args, out string name )
+    public static void InitializeParams (
+      string[] args,
+      out string name)
     {
       name = "Josef Pelikán";
 
       Form1 f = Form1.singleton;
 
-      // scene script (empty string for default scene):
-      f.sceneFileName = "../data/rtscenes/AnimatedScene.cs";
+      // Scene script (empty string for default scene).
+      f.sceneFileName = (args != null && args.Length > 0) ? args[0] : "../data/rtscenes/AnimatedScene.cs";
 
-      // Param string:
+      // Param string.
       f.textParam.Text = "";
 
-      // single frame:
-      f.ImageWidth = 320;
+      // Single frame.
+      f.ImageWidth  = 320;
       f.ImageHeight = 180;
       f.numericSupersampling.Value = 1;
 
-      // animation:
+      // Animation.
       f.numFrom.Value = (decimal)0.0;
-      f.numTo.Value = (decimal)20.0;
-      f.numFps.Value = (decimal)25.0;
+      f.numTo.Value   = (decimal)20.0;
+      f.numFps.Value  = (decimal)25.0;
     }
 
     /// <summary>
     /// Initialize the ray-scene.
     /// </summary>
-    public static IRayScene getScene (out IImageFunction imf, string param)
+    public static IRayScene getScene (
+      in bool preprocessing,
+      out IImageFunction imf,
+      out IRenderer rend,
+      ref int width,
+      ref int height,
+      ref int superSampling,
+      ref double minTime,
+      ref double maxTime,
+      ref double fps,
+      string param)
     {
-      IRayScene sc = Form1.singleton.SceneFromScript(out imf);
-      if (sc != null)
+      IRayScene sc = Form1.singleton.SceneFromScript(
+        preprocessing,
+        out imf,
+        out rend,
+        ref width,
+        ref height,
+        ref superSampling,
+        ref minTime,
+        ref maxTime,
+        ref fps);      // 'param' will be fetched from the Form
+
+      if (preprocessing ||
+          sc != null)
         return sc;
 
       sc = new AnimatedRayScene();
@@ -50,7 +73,8 @@ namespace _062animation
     /// Initialize ray-scene and image function (good enough for simple samples).
     /// Called only if IImageFunction was not defined in the animation script.
     /// </summary>
-    public static IImageFunction getImageFunction (IRayScene scene)
+    public static IImageFunction getImageFunction (
+      IRayScene scene)
     {
       return new RayTracing(scene);
     }
@@ -58,22 +82,17 @@ namespace _062animation
     /// <summary>
     /// Initialize image synthesizer (responsible for raster image computation).
     /// </summary>
-    public static IRenderer getRenderer ( IImageFunction imf )
+    public static IRenderer getRenderer (
+      int superSampling)
     {
-      Form1 f = Form1.singleton;
+      if (superSampling > 1)
+        return new SupersamplingImageSynthesizer
+        {
+          Supersampling = superSampling,
+          Jittering = 1.0
+        };
 
-      if ( f.superSampling > 1 )
-      {
-        SupersamplingImageSynthesizer sis = new SupersamplingImageSynthesizer();
-        sis.ImageFunction = imf;
-        sis.Supersampling = f.superSampling;
-        sis.Jittering = 1.0;
-        return sis;
-      }
-
-      SimpleImageSynthesizer s = new SimpleImageSynthesizer();
-      s.ImageFunction = imf;
-      return s;
+      return new SimpleImageSynthesizer();
     }
   }
 }
@@ -84,8 +103,14 @@ namespace Rendering
   /// Pilot implementation of time-dependent camera.
   /// It simply goes round the central point (look-at point).
   /// </summary>
-  public class AnimatedCameraOld : StaticCamera, ITimeDependent
+  public class AnimatedCamera : StaticCamera, ITimeDependent
   {
+#if DEBUG
+    private static volatile int nextSerial = 0;
+    private readonly int serial = nextSerial++;
+    public int getSerial () => serial;
+#endif
+
     /// <summary>
     /// Starting (minimal) time in seconds.
     /// </summary>
@@ -110,15 +135,19 @@ namespace Rendering
     /// Goes round the central point (lookAt).
     /// One complete turn for the whole time interval.
     /// </summary>
-    protected virtual void setTime ( double newTime )
+    protected virtual void setTime (double newTime)
     {
-      Debug.Assert( Start != End );
+      Debug.Assert(Start != End);
+
+#if DEBUG
+      Debug.WriteLine($"Camera #{getSerial()} setTime({newTime})");
+#endif
 
       time = newTime;    // Here Start & End define a periodicity, not bounds!
 
       // change the camera position:
       double angle = MathHelper.TwoPi * (time - Start) / (End - Start);
-      Vector3d radial = Vector3d.TransformVector( center0 - lookAt, Matrix4d.CreateRotationY( -angle ) );
+      Vector3d radial = Vector3d.TransformVector(center0 - lookAt, Matrix4d.CreateRotationY(-angle));
       center = lookAt + radial;
       direction = -radial;
       direction.Normalize();
@@ -130,14 +159,8 @@ namespace Rendering
     /// </summary>
     public double Time
     {
-      get
-      {
-        return time;
-      }
-      set
-      {
-        setTime( value );
-      }
+      get => time;
+      set => setTime(value);
     }
 
     /// <summary>
@@ -156,15 +179,15 @@ namespace Rendering
     /// <returns></returns>
     public virtual object Clone ()
     {
-      AnimatedCameraOld c = new AnimatedCameraOld( lookAt, center0, MathHelper.RadiansToDegrees( (float)hAngle ) );
+      AnimatedCamera c = new AnimatedCamera( lookAt, center0, MathHelper.RadiansToDegrees( (float)hAngle ) );
       c.Start = Start;
       c.End   = End;
       c.Time  = Time;
       return c;
     }
 
-    public AnimatedCameraOld ( Vector3d lookat, Vector3d cen, double ang )
-      : base( cen, lookat - cen, ang )
+    public AnimatedCamera (Vector3d lookat, Vector3d cen, double ang)
+      : base(cen, lookat - cen, ang)
     {
       lookAt  = lookat;
       center0 = cen;
@@ -186,28 +209,27 @@ namespace Rendering
     /// <summary>
     /// Creates default ray-rendering scene.
     /// </summary>
-    public static IRayScene Init ( IRayScene sc, string param )
+    public static IRayScene Init (IRayScene sc, string param)
     {
       // !!!{{ TODO: .. and use your time-dependent objects to construct the scene
 
       // This code is based on Scenes.TwoSpheres():
 
       // CSG scene:
-      CSGInnerNode root = new CSGInnerNode( SetOperation.Union );
-      root.SetAttribute( PropertyName.REFLECTANCE_MODEL, new PhongModel() );
-      root.SetAttribute( PropertyName.MATERIAL, new PhongMaterial( new double[] { 1.0, 0.8, 0.1 }, 0.1, 0.6, 0.4, 128 ) );
+      CSGInnerNode root = new CSGInnerNode(SetOperation.Union);
+      root.SetAttribute(PropertyName.REFLECTANCE_MODEL, new PhongModel());
+      root.SetAttribute(PropertyName.MATERIAL, new PhongMaterial(new double[] {1.0, 0.8, 0.1}, 0.1, 0.6, 0.4, 128));
       sc.Intersectable = root;
 
       // Background color:
-      sc.BackgroundColor = new double[] { 0.0, 0.05, 0.07 };
+      sc.BackgroundColor = new double[] {0.0, 0.05, 0.07};
 
       // Camera:
-      AnimatedCameraOld cam = new AnimatedCameraOld( new Vector3d( 0.7, -0.4,  0.0 ),
-                                               new Vector3d( 0.7,  0.8, -6.0 ),
-                                               50.0 );
+      AnimatedCamera cam = new AnimatedCamera(new Vector3d(0.7, -0.4,  0.0),
+                                              new Vector3d(0.7,  0.8, -6.0),
+                                              50.0 );
       cam.End = 20.0;            // one complete turn takes 20.0 seconds
-      AnimatedRayScene asc = sc as AnimatedRayScene;
-      if ( asc != null )
+      if (sc is AnimatedRayScene asc)
         asc.End = 20.0;
       sc.Camera  = cam;
 
@@ -217,29 +239,29 @@ namespace Rendering
 
       // Light sources:
       sc.Sources = new LinkedList<ILightSource>();
-      sc.Sources.Add( new AmbientLightSource( 0.8 ) );
-      sc.Sources.Add( new PointLightSource( new Vector3d( -5.0, 4.0, -3.0 ), 1.2 ) );
+      sc.Sources.Add( new AmbientLightSource(0.8));
+      sc.Sources.Add( new PointLightSource(new Vector3d(-5.0, 4.0, -3.0), 1.2));
 
       // --- NODE DEFINITIONS ----------------------------------------------------
 
       // Transparent sphere:
       Sphere s;
       s = new Sphere();
-      PhongMaterial pm = new PhongMaterial( new double[] { 0.0, 0.2, 0.1 }, 0.03, 0.03, 0.08, 128 );
+      PhongMaterial pm = new PhongMaterial(new double[] {0.0, 0.2, 0.1}, 0.03, 0.03, 0.08, 128);
       pm.n  = 1.6;
       pm.Kt = 0.9;
-      s.SetAttribute( PropertyName.MATERIAL, pm );
-      root.InsertChild( s, Matrix4d.Identity );
+      s.SetAttribute(PropertyName.MATERIAL, pm);
+      root.InsertChild(s, Matrix4d.Identity);
 
       // Opaque sphere:
       s = new Sphere();
-      root.InsertChild( s, Matrix4d.Scale( 1.2 ) * Matrix4d.CreateTranslation( 1.5, 0.2, 2.4 ) );
+      root.InsertChild(s, Matrix4d.Scale(1.2) * Matrix4d.CreateTranslation(1.5, 0.2, 2.4));
 
       // Infinite plane with checker:
       Plane pl = new Plane();
-      pl.SetAttribute( PropertyName.COLOR, new double[] { 0.3, 0.0, 0.0 } );
-      pl.SetAttribute( PropertyName.TEXTURE, new CheckerTexture( 0.6, 0.6, new double[] { 1.0, 1.0, 1.0 } ) );
-      root.InsertChild( pl, Matrix4d.RotateX( -MathHelper.PiOver2 ) * Matrix4d.CreateTranslation( 0.0, -1.0, 0.0 ) );
+      pl.SetAttribute(PropertyName.COLOR, new double[] {0.3, 0.0, 0.0});
+      pl.SetAttribute(PropertyName.TEXTURE, new CheckerTexture(0.6, 0.6, new double[] {1.0, 1.0, 1.0}));
+      root.InsertChild(pl, Matrix4d.RotateX(-MathHelper.PiOver2) * Matrix4d.CreateTranslation(0.0, -1.0, 0.0));
 
       // !!!}}
 

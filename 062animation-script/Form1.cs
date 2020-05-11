@@ -13,6 +13,8 @@ using Utilities;
 
 namespace _062animation
 {
+  using ScriptContext = Dictionary<string, object>;
+
   public partial class Form1 : Form
   {
     static readonly string rev = Util.SetVersion("$Rev$");
@@ -50,6 +52,21 @@ namespace _062animation
     /// </summary>
     public int ImageHeight = 480;
 
+    /// <summary>
+    /// Param string tooltip = help.
+    /// </summary>
+    private string tooltip = "";
+
+    /// <summary>
+    /// Shared ToolTip instance.
+    /// </summary>
+    private ToolTip tt = new ToolTip();
+
+    /// <summary>
+    /// Working context for the CS-script definitions.
+    /// </summary>
+    private ScriptContext ctx = null;
+
     private void EnableRendering (bool enable)
     {
       buttonRender.Enabled =
@@ -63,42 +80,58 @@ namespace _062animation
     /// Create a scene from the defined CS-script file-name.
     /// Returns null if failed.
     /// </summary>
-    public IRayScene SceneFromScript (out IImageFunction imf)
+    /// <param name="preprocessing">Invoke the script in the "preprocessing" mode?</param>
+    public IRayScene SceneFromScript (
+      bool preprocessing,
+      out IImageFunction imf,
+      out IRenderer rend,
+      ref int width,
+      ref int height,
+      ref int superSampling,
+      ref double minTime,
+      ref double maxTime,
+      ref double fps)
     {
       if (string.IsNullOrEmpty(sceneFileName))
       {
         imf = null;
+        rend = null;
+        tooltip = "";
         return null;
       }
 
-      Dictionary<string, object> outParam = new Dictionary<string, object>();
-      outParam["Start"] =  0.0;
-      outParam["End"]   = 20.0;
-      IRayScene scene = Scripts.SceneFromObject(
-        new AnimatedRayScene(),
-        out imf,
+      if (preprocessing)
+        ctx = new ScriptContext();    // we need a new context object for each computing batch..
+
+      Scripts.ContextInit(
+        ctx,
+        preprocessing ? new AnimatedRayScene() : null,
+        width,
+        height,
+        superSampling,
+        minTime,
+        maxTime,
+        fps);
+
+      Scripts.SceneFromObject(
+        ctx,
         Path.GetFileName(sceneFileName),
         sceneFileName,
         textParam.Text,
         (sc) => AnimatedScene.Init(sc, textParam.Text),
-        str => SetText(str),
-        outParam);
+        SetText);
 
-      object to;
-      double td;
-      if (outParam.TryGetValue("Start", out to) &&
-          to is double)
-      {
-        td = (double)to;
-        numFrom.Value = (decimal)td;
-      }
-
-      if (outParam.TryGetValue("End", out to) &&
-          to is double)
-      {
-        td = (double)to;
-        numTo.Value = (decimal)td;
-      }
+      DefaultRayScene scene = Scripts.ContextMining(
+        ctx,
+        out imf,
+        out rend,
+        out tooltip,
+        ref width,
+        ref height,
+        ref superSampling,
+        ref minTime,
+        ref maxTime,
+        ref fps);
 
       return scene;
     }
@@ -112,39 +145,84 @@ namespace _062animation
 
       EnableRendering(false);
 
-      width = ImageWidth;
-      if (width <= 0)
-        width = panel1.Width;
-      height = ImageHeight;
-      if (height <= 0)
-        height = panel1.Height;
-      superSampling = (int)numericSupersampling.Value;
-      outputImage = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+      ActualWidth = ImageWidth;
+      if (ActualWidth <= 0)
+        ActualWidth = panel1.Width;
+      ActualHeight = ImageHeight;
+      if (ActualHeight <= 0)
+        ActualHeight = panel1.Height;
 
-      IRayScene scene = FormSupport.getScene(out IImageFunction imf, textParam.Text);
+      superSampling  = (int)numericSupersampling.Value;
+      double minTime = (double)numFrom.Value;
+      double maxTime = (double)numTo.Value;
+      double fps     = (double)numFps.Value;
 
-      if (imf == null)
+      // 1. preprocessing - compute simulation, animation data, etc.
+      _ = FormSupport.getScene(
+        true,
+        out _, out _,
+        ref ActualWidth,
+        ref ActualHeight,
+        ref superSampling,
+        ref minTime,
+        ref maxTime,
+        ref fps,
+        textParam.Text);
+
+      // 2. compute regular frame (using the pre-computed context).
+      IRayScene scene = FormSupport.getScene(
+        false,
+        out IImageFunction imf,
+        out IRenderer rend,
+        ref ActualWidth,
+        ref ActualHeight,
+        ref superSampling,
+        ref minTime,
+        ref maxTime,
+        ref fps,
+        textParam.Text);
+
+      // Update GUI.
+      if (ImageWidth > 0)   // preserving default (form-size) resolution
+      {
+        ImageWidth  = ActualWidth;
+        ImageHeight = ActualHeight;
+        UpdateResolutionButton();
+      }
+      UpdateSupersampling(superSampling);
+      UpdateAnimationTiming(minTime, maxTime, fps);
+
+      // IImageFunction.
+      if (imf == null)      // not defined in the script
         imf = FormSupport.getImageFunction(scene);
-      imf.Width = width;
-      imf.Height = height;
+      else
+        if (imf is RayCasting imfrc)
+          imfrc.Scene = scene;
+      imf.Width  = ActualWidth;
+      imf.Height = ActualHeight;
 
-      IRenderer rend = FormSupport.getRenderer(imf);
-      rend.Width = width;
-      rend.Height = height;
-      rend.Adaptive = 0;
-      rend.ProgressData = progress;
-      progress.Continue = true;
+      // IRenderer.
+      if (rend == null)        // not defined in the script
+        rend = FormSupport.getRenderer(superSampling);
+      rend.ImageFunction = imf;
+      rend.Width         = ActualWidth;
+      rend.Height        = ActualHeight;
+      rend.Adaptive      = 0;
+      rend.ProgressData  = progress;
+      progress.Continue  = true;
 
-      // animation:
-      ITimeDependent sc = scene as ITimeDependent;
-      if (sc != null)
+      // Animation time has to be set.
+      if (scene is ITimeDependent sc)
         sc.Time = (double)numTime.Value;
+
+      // Output image.
+      outputImage = new Bitmap(ActualWidth, ActualHeight, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
 
       MT.InitThreadData();
       Stopwatch sw = new Stopwatch();
       sw.Start();
 
-      rend.RenderRectangle(outputImage, 0, 0, width, height);
+      rend.RenderRectangle(outputImage, 0, 0, ActualWidth, ActualHeight);
 
       sw.Stop();
       labelElapsed.Text = string.Format("Elapsed: {0:f1}s", 1.0e-3 * sw.ElapsedMilliseconds);
@@ -183,6 +261,49 @@ namespace _062animation
       }
       else
         labelElapsed.Text = text;
+    }
+
+    delegate void UpdateResolutionCallback ();
+
+    protected void UpdateResolutionButton ()
+    {
+      if (buttonRes.InvokeRequired)
+      {
+        UpdateResolutionCallback ur = new UpdateResolutionCallback(UpdateResolutionButton);
+        BeginInvoke(ur);
+      }
+      else
+        buttonRes.Text = FormResolution.GetLabel(ref ImageWidth, ref ImageHeight);
+    }
+
+    delegate void UpdateSupersamplingCallback (int superSampling);
+
+    protected void UpdateSupersampling (int superSampling)
+    {
+      if (numericSupersampling.InvokeRequired)
+      {
+        UpdateSupersamplingCallback us = new UpdateSupersamplingCallback(UpdateSupersampling);
+        BeginInvoke(us, new object[] {superSampling});
+      }
+      else
+        numericSupersampling.Value = superSampling;
+    }
+
+    delegate void UpdateAnimationCallback (double minTime, double maxTime, double fps);
+
+    protected void UpdateAnimationTiming (double minTime, double maxTime, double fps)
+    {
+      if (numFrom.InvokeRequired)
+      {
+        UpdateAnimationCallback ua = new UpdateAnimationCallback(UpdateAnimationTiming);
+        BeginInvoke(ua, new object[] { minTime, maxTime, fps });
+      }
+      else
+      {
+        numFrom.Value = (decimal)minTime;
+        numTo.Value   = (decimal)maxTime;
+        numFps.Value  = (decimal)fps;
+      }
     }
 
     delegate void StopAnimationCallback ();
@@ -227,7 +348,7 @@ namespace _062animation
       }
       Text += " (rev: " + rev + ") '" + name + '\'';
 
-      buttonRes.Text = FormResolution.GetLabel(ref ImageWidth, ref ImageHeight);
+      UpdateResolutionButton();
     }
 
     private void buttonRes_Click (object sender, EventArgs e)
@@ -235,9 +356,9 @@ namespace _062animation
       FormResolution form = new FormResolution(ImageWidth, ImageHeight);
       if (form.ShowDialog() == DialogResult.OK)
       {
-        ImageWidth = form.ImageWidth;
+        ImageWidth  = form.ImageWidth;
         ImageHeight = form.ImageHeight;
-        buttonRes.Text = FormResolution.GetLabel(ref ImageWidth, ref ImageHeight);
+        UpdateResolutionButton();
       }
     }
 
@@ -266,12 +387,12 @@ namespace _062animation
     /// <summary>
     /// Frame width in pixels.
     /// </summary>
-    protected int width;
+    protected int ActualWidth;
 
     /// <summary>
     /// Frame height in pixels.
     /// </summary>
-    protected int height;
+    protected int ActualHeight;
 
     /// <summary>
     /// Time of the last frame.
@@ -348,23 +469,12 @@ namespace _062animation
         progress.Continue = true;
       }
 
-      // Global animation properties (it's safe to access GUI components here):
-      time = (double)numFrom.Value;
-      end = (double)numTo.Value;
-      if (end <= time)
-        end = time + 1.0;
-      double fps = (double)numFps.Value;
-      dt = (fps > 0.0) ? 1.0 / fps : 25.0;
-      end += 0.5 * dt;
-      frameNumber = 0;
-
-      width = ImageWidth;
-      if (width <= 0)
-        width = panel1.Width;
-      height = ImageHeight;
-      if (height <= 0)
-        height = panel1.Height;
-      superSampling = (int)numericSupersampling.Value;
+      ActualWidth = ImageWidth;
+      if (ActualWidth <= 0)
+        ActualWidth = panel1.Width;
+      ActualHeight = ImageHeight;
+      if (ActualHeight <= 0)
+        ActualHeight = panel1.Height;
 
       // Start main rendering thread:
       aThread = new Thread(new ThreadStart(RenderAnimation));
@@ -414,37 +524,98 @@ namespace _062animation
 
       int threads = Environment.ProcessorCount;
       int t;    // thread ordinal number
+      int superSampling = (int)numericSupersampling.Value;
+      double minTime    = (double)numFrom.Value;
+      double maxTime    = (double)numTo.Value;
+      double fps        = (double)numFps.Value;
 
-      WorkerThreadInit[] wti = new WorkerThreadInit[ threads ];
+      WorkerThreadInit[] wti = new WorkerThreadInit[threads];
+
+      // 1. preprocessing - compute simulation, animation data, etc.
+      FormSupport.getScene(
+        true,
+        out _, out _,
+        ref ActualWidth,
+        ref ActualHeight,
+        ref superSampling,
+        ref minTime,
+        ref maxTime,
+        ref fps,
+        textParam.Text);
 
       for (t = 0; t < threads; t++)
       {
-        IRayScene sc = FormSupport.getScene(out IImageFunction imf, textParam.Text);
-        if (imf == null)
+        // 2. initialize data for regular frames (using the pre-computed context).
+        IRayScene sc = FormSupport.getScene(
+          false,
+          out IImageFunction imf,
+          out IRenderer rend,
+          ref ActualWidth,
+          ref ActualHeight,
+          ref superSampling,
+          ref minTime,
+          ref maxTime,
+          ref fps,
+          textParam.Text);
+
+        if (t == 0)
+        {
+          // Update GUI.
+          if (ImageWidth > 0)   // preserving default (form-size) resolution
+          {
+            ImageWidth  = ActualWidth;
+            ImageHeight = ActualHeight;
+            UpdateResolutionButton();
+          }
+          UpdateSupersampling(superSampling);
+          UpdateAnimationTiming(minTime, maxTime, fps);
+        }
+
+        if (sc is ITimeDependent sca)
+          sc = (IRayScene)sca.Clone();
+
+        // IImageFunction.
+        if (imf == null)    // not defined in the script
           imf = FormSupport.getImageFunction(sc);
-        imf.Width = width;
-        imf.Height = height;
+        else
+          if (imf is RayCasting imfray)
+            imfray.Scene = sc;
+        imf.Width  = ActualWidth;
+        imf.Height = ActualHeight;
 
-        IRenderer r = FormSupport.getRenderer(imf);
-        r.Width = width;
-        r.Height = height;
-        r.Adaptive = 0;           // turn off adaptive bitmap synthesis completely (interactive preview not needed)
-        r.ProgressData = progress;
+        // IRenderer.
+        if (rend == null)   // not defined in the script
+          rend = FormSupport.getRenderer(superSampling);
+        rend.ImageFunction = imf;
+        rend.Width         = ActualWidth;
+        rend.Height        = ActualHeight;
+        rend.Adaptive      = 0;   // turn off adaptive bitmap synthesis completely (interactive preview not needed)
+        rend.ProgressData  = progress;
 
-        wti[t] = new WorkerThreadInit(r, sc as ITimeDependent, imf as ITimeDependent, width, height);
+        wti[t] = new WorkerThreadInit(rend, sc as ITimeDependent, imf as ITimeDependent, ActualWidth, ActualHeight);
       }
+
+      // Update animation timing.
+      time = minTime;
+      end =  maxTime;
+      if (end <= time)
+        end = time + 1.0;
+
+      dt = (fps > 0.0) ? 1.0 / fps : 25.0;
+      end += 0.5 * dt;
+      frameNumber = 0;
 
       initQueue();
       sem = new Semaphore(0, 10 * threads);
 
-      // pool of working threads:
+      // Pool of working threads.
       Thread[] pool = new Thread[threads];
       for (t = 0; t < threads; t++)
         pool[t] = new Thread(new ParameterizedThreadStart(RenderWorker));
       for (t = threads; --t >= 0;)
         pool[t].Start(wti[t]);
 
-      // loop for collection of computed frames:
+      // Loop for collection of computed frames.
       int frames = 0;
       int lastDisplayedFrame = -1;
       const long DISPLAY_GAP = 10000L;
@@ -464,7 +635,7 @@ namespace _062animation
             break;
         }
 
-        // there could be a frame to process:
+        // There could be a frame to process.
         Result r;
         lock (queue)
         {
@@ -475,9 +646,9 @@ namespace _062animation
 
         // GUI progress indication:
         double seconds = 1.0e-3 * sw.ElapsedMilliseconds;
-        double fps = ++frames / seconds;
+        double cfps = ++frames / seconds;
         SetText(string.Format(CultureInfo.InvariantCulture, "Frames (mt{0}): {1}  ({2:f0} s, {3:f2} fps)",
-                              threads, frames, seconds, fps));
+                              threads, frames, seconds, cfps));
         if (r.frameNumber > lastDisplayedFrame &&
             sw.ElapsedMilliseconds > lastDisplayedTime + DISPLAY_GAP)
         {
@@ -486,7 +657,7 @@ namespace _062animation
           SetImage((Bitmap)r.image.Clone());
         }
 
-        // save the image file:
+        // Save the image file.
         string fileName = string.Format("out{0:0000}.png", r.frameNumber);
         r.image.Save(fileName, System.Drawing.Imaging.ImageFormat.Png);
         r.image.Dispose();
@@ -515,7 +686,7 @@ namespace _062animation
 
       MT.InitThreadData();
 
-      // worker loop:
+      // Worker loop.
       while (true)
       {
         double myTime;
@@ -531,26 +702,30 @@ namespace _062animation
             return;
           }
 
-          // got a frame to compute:
+          // I've got a frame to compute.
           myTime = time;
           myEndTime = (time += dt);
           myFrameNumber = frameNumber++;
         }
 
-        // set up the new result record:
+        // Set up the new result record.
         Result r = new Result();
         r.image = new Bitmap(init.width, init.height, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
         r.frameNumber = myFrameNumber;
 
-        // set specific time to my scene:
+        // Set specific time to my scene.
         if (init.scene != null)
-          init.scene.Time = myTime;
-
-        ITimeDependent anim = init.rend as ITimeDependent;
-        if (anim != null)
         {
-          anim.Start = myTime;
-          anim.End = myEndTime;
+#if DEBUG
+          Debug.WriteLine($"Scene #{init.scene.getSerial()} setTime({myTime})");
+#endif
+          init.scene.Time = myTime;
+        }
+
+        if (init.rend is ITimeDependent arend)
+        {
+          arend.Start = myTime;
+          arend.End = myEndTime;
         }
 
         if (init.imfunc != null)
@@ -559,10 +734,10 @@ namespace _062animation
           init.imfunc.End = myEndTime;
         }
 
-        // render the whole frame:
+        // Render the whole frame...
         init.rend.RenderRectangle(r.image, 0, 0, init.width, init.height);
 
-        // ... and put the result into the output queue:
+        // ...and put the result into the output queue.
         lock (queue)
         {
           queue.Enqueue(r);
@@ -594,6 +769,12 @@ namespace _062animation
 
       sceneFileName = ofd.FileName;
       buttonScene.Text = sceneFileName;   // Path.GetFileName(sceneFileName);
+    }
+
+    private void textParam_MouseHover (object sender, EventArgs e)
+    {
+      tt.Show(tooltip, (IWin32Window)sender,
+              10, -24 - 15 * Util.CharsInString(tooltip, '\r'), 3000);
     }
   }
 }
