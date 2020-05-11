@@ -35,6 +35,8 @@ Util.TryParse(p, "n", ref n);
 // mat = {mirror|glass|diffuse}
 PhongMaterial pm = new PhongMaterial(new double[] { 1.0, 0.6, 0.1 }, 0.1, 0.8, 0.2, 16);
 PhongMaterial r = new PhongMaterial(new double[] { 0.8, 0.1, 0.1 }, 0.1, 0.8, 0.2, 16);
+PhongMaterial g = new PhongMaterial(new double[] { 0.1, 1.0, 0.2 }, 0.1, 0.8, 0.2, 16);
+
 string mat;
 if (p.TryGetValue("mat", out mat))
 switch (mat)
@@ -61,9 +63,19 @@ Cube c;
 
 // animated cube
 c = new Cube();
-AnimatableISceneNode movingCube = new AnimatableISceneNode(c, "t1", "r1", "s1");
+AnimatableISceneNode movingCube = new AnimatableISceneNode(c, "t1", null, "s1");
 root.InsertChild(c, Matrix4d.Identity);
 c.SetAttribute(PropertyName.MATERIAL, r);
+
+c = new Cube();
+AnimatableISceneNode movingCube2 = new AnimatableISceneNode(c, null, "r1", null, new Vector3d(-5, -0.5, 0));
+root.InsertChild(c, Matrix4d.Identity);
+c.SetAttribute(PropertyName.MATERIAL, g);
+
+c = new Cube();
+AnimatableISceneNode movingCube3 = new AnimatableISceneNode(c, null, "r1", null, new Vector3d(6, -0.5, 0));
+root.InsertChild(c, Matrix4d.Identity);
+c.SetAttribute(PropertyName.MATERIAL, g);
 
 
 // front row:
@@ -106,7 +118,7 @@ root.InsertChild(c, Matrix4d.RotateX(0.5) * Matrix4d.CreateTranslation(5.0, 1.0,
 c.SetAttribute(PropertyName.MATERIAL, pm);
 
 // Camera:
-scene.Camera = new CameraAnimator(new AnimatableStaticCamera(), new IAnimatable[] { movingCube }, "..\\..\\..\\data\\rtscenes\\AnimatedCubes.yaml");
+scene.Camera = new CameraAnimator(new AnimatableStaticCamera(), new IAnimatable[] { movingCube, movingCube2, movingCube3 }, "..\\..\\..\\data\\rtscenes\\AnimatedCubes.yaml");
 if (scene is ITimeDependent s)
     s.End = (scene.Camera as ITimeDependent).End;
 if (context != null)

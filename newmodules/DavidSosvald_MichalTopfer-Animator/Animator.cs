@@ -6,6 +6,7 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Globalization;
 using Rendering;
+using Utilities;
 
 namespace DavidSosvald_MichalTopfer
 {
@@ -27,7 +28,14 @@ namespace DavidSosvald_MichalTopfer
         public Animator (IEnumerable<IAnimatable> animatables, string keyframesFile)
         {
             this.animatables = animatables.ToList();
-            parameters = animatables.SelectMany(a => a.GetParams()).ToDictionary(p => p.Name, p => p);
+            parameters = new Dictionary<string, Parameter>();
+            foreach (var p in animatables.SelectMany(a => a.GetParams()))
+            {
+                if (!parameters.ContainsKey(p.Name))
+                    parameters.Add(p.Name, p);
+                else
+                    Util.Log("Parameter '" + p.Name + "' already exists.");
+            }
             ReadAndSaveCameraScript(keyframesFile);
             Start = keyframes[0].Time;
             End = keyframes[keyframes.Count - 1].Time;
@@ -389,13 +397,17 @@ namespace DavidSosvald_MichalTopfer
     {
         ISceneNode node;
         string translationParamName, rotationParamName, scaleParamName;
+        Vector3d defaultTranslation, defaultRotation, defaultScale;
 
-        public AnimatableISceneNode(ISceneNode node, string translationParamName = null, string rotationParamName = null, string scaleParamName = null)
+        public AnimatableISceneNode(ISceneNode node, string translationParamName = null, string rotationParamName = null, string scaleParamName = null, Vector3d? defaultTranslation = null, Vector3d? defaultRotation = null, Vector3d? defaultScale = null)
         {
             this.node = node;
             this.translationParamName = translationParamName;
             this.rotationParamName = rotationParamName;
             this.scaleParamName = scaleParamName;
+            this.defaultTranslation = defaultTranslation ?? Vector3d.Zero;
+            this.defaultRotation = defaultRotation ?? Vector3d.Zero;
+            this.defaultScale = defaultScale ?? Vector3d.One;
         }
 
         public IEnumerable<Animator.Parameter> GetParams ()
@@ -417,9 +429,9 @@ namespace DavidSosvald_MichalTopfer
 
         public void ApplyParams (Dictionary<string, object> p)
         {
-            Vector3d translation = translationParamName != null ? (Vector3d)p[translationParamName] : Vector3d.Zero;
-            Vector3d rotation = rotationParamName != null ? (Vector3d)p[rotationParamName] : Vector3d.Zero;
-            Vector3d scale = scaleParamName != null ? (Vector3d)p[scaleParamName] : new Vector3d(1,1,1);
+            Vector3d translation = translationParamName != null ? (Vector3d)p[translationParamName] : defaultTranslation;
+            Vector3d rotation = rotationParamName != null ? (Vector3d)p[rotationParamName] : defaultRotation;
+            Vector3d scale = scaleParamName != null ? (Vector3d)p[scaleParamName] : defaultScale;
 
 
             node.ToParent = Matrix4d.Scale(scale) * Matrix4d.Rotate(Quaterniond.FromEulerAngles(rotation)) * Matrix4d.CreateTranslation(translation);
