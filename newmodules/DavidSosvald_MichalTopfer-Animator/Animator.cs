@@ -382,4 +382,39 @@ namespace DavidSosvald_MichalTopfer
 
     public interface IAnimatableCamera : IAnimatable, ICamera
     { }
+
+    public class AnimatableISceneNode : IAnimatable
+    {
+        ISceneNode node;
+        string translationParamName;
+
+        public AnimatableISceneNode(ISceneNode node, string translationParamName = null)
+        {
+            this.node = node;
+            this.translationParamName = translationParamName;
+        }
+
+        public IEnumerable<Animator.Parameter> GetParams ()
+        {
+            List<Animator.Parameter> p;
+            if (node is IAnimatable n)
+                p = n.GetParams().ToList();
+            else
+                p = new List<Animator.Parameter>();
+
+            if (translationParamName != null)
+                p.Add(new Animator.Parameter(translationParamName, Animator.Parsers.ParseVector3, Animator.Interpolators.Catmull_Rom, true));
+            return p;
+        }
+
+        public void ApplyParams (Dictionary<string, object> p)
+        {
+            Vector3d translation = (Vector3d)p[translationParamName];
+            node.ToParent = Matrix4d.CreateTranslation(translation);
+            node.FromParent = node.ToParent.Inverted();
+
+            if (node is IAnimatable n)
+                n.ApplyParams(p);
+        }
+    }
 }

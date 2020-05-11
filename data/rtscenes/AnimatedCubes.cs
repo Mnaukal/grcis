@@ -18,9 +18,6 @@ scene.Intersectable = root;
 // Background color:
 scene.BackgroundColor = new double[] { 0.0, 0.05, 0.07 };
 
-// Camera:
-scene.Camera = new CameraAnimator(new AnimatableStaticCamera(), "..\\..\\..\\data\\rtscenes\\camera_script.txt");
-
 // Light sources:
 scene.Sources = new LinkedList<ILightSource>();
 scene.Sources.Add(new AmbientLightSource(0.8));
@@ -37,6 +34,7 @@ Util.TryParse(p, "n", ref n);
 
 // mat = {mirror|glass|diffuse}
 PhongMaterial pm = new PhongMaterial(new double[] { 1.0, 0.6, 0.1 }, 0.1, 0.8, 0.2, 16);
+PhongMaterial r = new PhongMaterial(new double[] { 0.8, 0.1, 0.1 }, 0.1, 0.8, 0.2, 16);
 string mat;
 if (p.TryGetValue("mat", out mat))
 switch (mat)
@@ -60,6 +58,14 @@ root.InsertChild(pl, Matrix4d.RotateX(-MathHelper.PiOver2) * Matrix4d.CreateTran
 
 // Cubes
 Cube c;
+
+// animated cube
+c = new Cube();
+AnimatableISceneNode movingCube = new AnimatableISceneNode(c, "t1");
+root.InsertChild(c, Matrix4d.Identity);
+c.SetAttribute(PropertyName.MATERIAL, r);
+
+
 // front row:
 c = new Cube();
 root.InsertChild(c, Matrix4d.RotateY(0.6) * Matrix4d.CreateTranslation(-3.5, -0.8, 0.0));
@@ -98,3 +104,6 @@ c.SetAttribute(PropertyName.MATERIAL, pm);
 c = new Cube();
 root.InsertChild(c, Matrix4d.RotateX(0.5) * Matrix4d.CreateTranslation(5.0, 1.0, 2.0));
 c.SetAttribute(PropertyName.MATERIAL, pm);
+
+// Camera:
+scene.Camera = new CameraAnimator(new AnimatableStaticCamera(), new IAnimatable[] { movingCube }, "..\\..\\..\\data\\rtscenes\\AnimatedCubes.yaml");
