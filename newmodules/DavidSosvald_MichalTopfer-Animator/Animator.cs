@@ -38,10 +38,7 @@ namespace DavidSosvald_MichalTopfer
             : this(new IAnimatable[] { animatable }, keyframesFile)
         { }
 
-        private Animator (List<IAnimatable> animatables)
-        {
-            this.animatables = animatables;
-        }
+        protected Animator () { }
 
         private void ReadAndSaveCameraScript (string fileName)
         {
@@ -132,20 +129,27 @@ namespace DavidSosvald_MichalTopfer
         }
         private double time;
         public object Clone ()
+        { 
+            Animator cloned = new Animator();
+            CopyFields(this, cloned);
+            return cloned;
+        }
+        protected static void CopyFields(Animator from, Animator to)
         {
-            List<IAnimatable> clonedAnimatables = new List<IAnimatable>(animatables.Count);
-            foreach (IAnimatable a in animatables)
+            List<IAnimatable> clonedAnimatables = new List<IAnimatable>(from.animatables.Count);
+            foreach (IAnimatable a in from.animatables)
             {
                 if (a is ITimeDependent t)
                     clonedAnimatables.Add((IAnimatable)t.Clone());
                 else
                     clonedAnimatables.Add(a);
             }
-            Animator cloned = new Animator(clonedAnimatables);
-            cloned.Start = this.Start;
-            cloned.End = this.End;
-            cloned.Time = this.Time;
-            return cloned;
+            to.animatables = clonedAnimatables;
+            to.keyframes = from.keyframes;
+            to.parameters = from.parameters;
+            to.Start = from.Start;
+            to.End = from.End;
+            to.Time = from.Time;
         }
 
         private Dictionary<string, object> InterpolateKeyframes()
@@ -306,7 +310,7 @@ namespace DavidSosvald_MichalTopfer
         }
     }
 
-    public class CameraAnimator : Animator, ICamera
+    public class CameraAnimator : Animator, ICamera, ICloneable
     {
         ICamera camera;
 
@@ -320,6 +324,19 @@ namespace DavidSosvald_MichalTopfer
             : base(camera, keyframesFile)
         {
             this.camera = camera;
+        }
+
+        protected CameraAnimator() { }
+
+        public new object Clone ()
+        {
+            CameraAnimator cloned = new CameraAnimator();
+            CopyFields(this, cloned);
+            if (camera is ITimeDependent c)
+                cloned.camera = (ICamera)c.Clone();
+            else
+                cloned.camera = camera;
+            return cloned;
         }
 
         public double AspectRatio { get => camera.AspectRatio; set => camera.AspectRatio = value; }
