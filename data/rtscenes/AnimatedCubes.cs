@@ -37,20 +37,7 @@ PhongMaterial pm = new PhongMaterial(new double[] { 1.0, 0.6, 0.1 }, 0.1, 0.8, 0
 PhongMaterial r = new PhongMaterial(new double[] { 0.8, 0.1, 0.1 }, 0.1, 0.8, 0.2, 16);
 PhongMaterial g = new PhongMaterial(new double[] { 0.1, 1.0, 0.2 }, 0.1, 0.8, 0.2, 16);
 
-string mat;
-if (p.TryGetValue("mat", out mat))
-switch (mat)
-{
-    case "mirror":
-        pm = new PhongMaterial(new double[] { 1.0, 1.0, 0.8 }, 0.0, 0.1, 0.9, 128);
-        break;
-
-    case "glass":
-        pm = new PhongMaterial(new double[] { 0.0, 0.2, 0.1 }, 0.05, 0.05, 0.1, 128);
-        pm.n = n;
-        pm.Kt = 0.9;
-        break;
-}
+AnimatableMaterial animatableMaterial = new AnimatableMaterial(pm, "color");
 
 // Base plane
 Plane pl = new Plane();
@@ -118,7 +105,7 @@ root.InsertChild(c, Matrix4d.RotateX(0.5) * Matrix4d.CreateTranslation(5.0, 1.0,
 c.SetAttribute(PropertyName.MATERIAL, pm);
 
 // Camera:
-scene.Camera = new CameraAnimator(new AnimatableStaticCamera(), new IAnimatable[] { movingCube, movingCube2, movingCube3 }, "..\\..\\..\\data\\rtscenes\\AnimatedCubes.yaml");
+scene.Camera = new CameraAnimator(new AnimatableStaticCamera(), new IAnimatable[] { movingCube, movingCube2, movingCube3, animatableMaterial }, "..\\..\\..\\data\\rtscenes\\AnimatedCubes.yaml");
 if (scene is ITimeDependent s)
     s.End = (scene.Camera as ITimeDependent).End;
 if (context != null)

@@ -256,6 +256,22 @@ namespace DavidSosvald_MichalTopfer
                     throw new ArgumentException("Error while parsing double: '" + s + "'.");
                 }
             }
+
+            public static object ParseDoubleArray (string s)
+            {
+                try
+                {
+                    string[] tokens = s.Split(commaSeparator);
+                    double[] array = new double[tokens.Length];
+                    for (int i = 0; i < tokens.Length; i++)
+                        array[i] = double.Parse(tokens[i], CultureInfo.InvariantCulture);
+                    return array;
+                }
+                catch
+                {
+                    throw new ArgumentException("Error while parsing double array: '" + s + "'.");
+                }
+            }
         }
 
         public static class Interpolators
@@ -279,6 +295,8 @@ namespace DavidSosvald_MichalTopfer
                     return Catmull_Rom_Vector3((Vector3d)previous, (Vector3d)current, (Vector3d)next, (Vector3d)later, t);
                 if (previous is double)
                     return Catmull_Rom_Double((double)previous, (double)current, (double)next, (double)later, t);
+                if (previous is double[])
+                    return Catmull_Rom_DoubleArray((double[])previous, (double[])current, (double[])next, (double[])later, t);
                 throw new ArgumentException("Type not supported: '" + previous.GetType() + "'.");
             }
 
@@ -301,6 +319,14 @@ namespace DavidSosvald_MichalTopfer
                 return result.X;
             }
 
+            private static double[] Catmull_Rom_DoubleArray (double[] previous, double[] current, double[] next, double[] later, double t)
+            {
+                double[] result = new double[previous.Length];
+                for (int i = 0; i < previous.Length; i++)
+                    result[i] = Catmull_Rom_Double(previous[i], current[i], next[i], later[i], t);
+                return result;
+            }
+
             /// <summary>
             /// Linear interpolation
             /// </summary>
@@ -315,7 +341,17 @@ namespace DavidSosvald_MichalTopfer
                     return Vector3d.Lerp((Vector3d)current, (Vector3d)next, t);
                 if (previous is double)
                     return (1 - t) * (double)current + t * (double)next;
+                if (previous is double[])
+                    return LERP_DoubleArray((double[])previous, (double[])current, (double[])next, (double[])later, t);
                 throw new ArgumentException("Type not supported: '" + previous.GetType() + "'.");
+            }
+
+            private static double[] LERP_DoubleArray (double[] previous, double[] current, double[] next, double[] later, double t)
+            {
+                double[] result = new double[previous.Length];
+                for (int i = 0; i < previous.Length; i++)
+                    result[i] = (double)LERP(previous[i], current[i], next[i], later[i], t);
+                return result;
             }
         }
     }
@@ -439,6 +475,40 @@ namespace DavidSosvald_MichalTopfer
 
             if (node is IAnimatable n)
                 n.ApplyParams(p);
+        }
+    }
+
+    public class AnimatableMaterial : IAnimatable
+    {
+        IMaterial material;
+        string colorParamName;
+
+        public AnimatableMaterial(IMaterial material, string colorParamName)
+        {
+            this.material = material;
+            this.colorParamName = colorParamName;
+        }
+
+        public IEnumerable<Animator.Parameter> GetParams ()
+        {
+            List<Animator.Parameter> p;
+            if (material is IAnimatable m)
+                p = m.GetParams().ToList();
+            else
+                p = new List<Animator.Parameter>();
+
+            if (colorParamName != null)
+                p.Add(new Animator.Parameter(colorParamName, Animator.Parsers.ParseDoubleArray, Animator.Interpolators.Catmull_Rom, true));
+            return p;
+        }
+
+        public void ApplyParams (Dictionary<string, object> p)
+        {
+            double[] color = (double[])p[colorParamName];
+            material.Color = color;
+
+            if (material is IAnimatable m)
+                m.ApplyParams(p);
         }
     }
 }
