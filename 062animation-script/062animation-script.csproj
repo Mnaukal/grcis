@@ -167,16 +167,16 @@
     <Compile Include="..\common\RayTracingRender.cs">
       <Link>RayTracingRender.cs</Link>
     </Compile>
-    <Compile Include="..\common\rt_extensions\AnimatedCamera\AnimatedCamera.cs">
+    <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-AnimatedCamera\AnimatedCamera.cs">
       <Link>rt_extensions\AnimatedCamera.cs</Link>
     </Compile>
-    <Compile Include="..\common\rt_extensions\DoFCamera\AnimatableDoFCamera.cs">
+    <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-DoFCamera\AnimatableDoFCamera.cs">
       <Link>rt_extensions\AnimatableDoFCamera.cs</Link>
     </Compile>
-    <Compile Include="..\common\rt_extensions\DoFCamera\DoFCamera.cs">
+    <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-DoFCamera\DoFCamera.cs">
       <Link>rt_extensions\DoFCamera.cs</Link>
     </Compile>
-    <Compile Include="..\common\rt_extensions\VertigoEffectCamera\VertigoEffectCamera.cs">
+    <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-VertigoEffectCamera\VertigoEffectCamera.cs">
       <Link>rt_extensions\VertigoEffectCamera.cs</Link>
     </Compile>
     <Compile Include="..\common\Scene.cs">

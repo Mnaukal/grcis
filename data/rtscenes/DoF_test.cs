@@ -2,9 +2,9 @@ using System.Collections.Generic;
 using DavidSosvald_MichalTopfer;
 
 // Optional IImageFunction.
-if (outParam != null)
+if (context != null)
 {
-    outParam["Algorithm"] = new RayTracing(scene);
+    context["Algorithm"] = new RayTracing(scene);
 }
 
 // Params dictionary:

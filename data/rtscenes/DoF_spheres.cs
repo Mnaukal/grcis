@@ -3,9 +3,9 @@ using System.IO;
 using DavidSosvald_MichalTopfer;
 
 // Optional IImageFunction.
-if (outParam != null)
+if (context != null)
 {
-    outParam["Algorithm"] = new RayTracing(scene);
+    context["Algorithm"] = new RayTracing(scene);
 }
 
 // Params dictionary:
@@ -31,10 +31,10 @@ string script_file = Path.Combine(Path.GetDirectoryName(scriptFileName), "dof_sp
 scene.Camera = new AnimatedCamera(new VertigoEffectCamera(new AnimatableDoFCamera(), true, true, 8), script_file);
 if (scene is ITimeDependent s)
     s.End = (scene.Camera as AnimatedCamera).End;
-if (outParam != null)
+if (context != null)
 {
-    outParam["Start"] =  (scene.Camera as AnimatedCamera).Start;
-    outParam["End"] = (scene.Camera as AnimatedCamera).End;
+    context["Start"] =  (scene.Camera as AnimatedCamera).Start;
+    context["End"] = (scene.Camera as AnimatedCamera).End;
 }
 
 // Light sources:

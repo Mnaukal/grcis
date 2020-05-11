@@ -18,6 +18,11 @@ namespace DavidSosvald_MichalTopfer
         private static char[] colonSeparator = {':'};
         private static char[] commaSeparator = {','};
 
+#if DEBUG
+        int serial = 0;
+        public int getSerial () => serial;
+#endif
+
         public AnimatedCamera (IAnimatableCamera animatableCamera, string fileName)
         {
             this.animatableCamera = animatableCamera;
@@ -129,6 +134,9 @@ namespace DavidSosvald_MichalTopfer
             clonedCamera.Start = this.Start;
             clonedCamera.End = this.End;
             clonedCamera.Time = this.Time;
+#if DEBUG
+            clonedCamera.serial = this.serial + 1; // TODO: make serial unique for each copy
+#endif
             return clonedCamera;
         }
 
