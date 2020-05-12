@@ -90,7 +90,8 @@ namespace _062animation
       ref int superSampling,
       ref double minTime,
       ref double maxTime,
-      ref double fps)
+      ref double fps,
+      in double? time = null)
     {
       if (string.IsNullOrEmpty(sceneFileName))
       {
@@ -100,12 +101,14 @@ namespace _062animation
         return null;
       }
 
-      if (preprocessing)
+      if (preprocessing ||
+          ctx == null)
         ctx = new ScriptContext();    // we need a new context object for each computing batch..
 
       Scripts.ContextInit(
         ctx,
         preprocessing ? new AnimatedRayScene() : null,
+        Path.GetFileName(sceneFileName),
         width,
         height,
         superSampling,
@@ -113,9 +116,11 @@ namespace _062animation
         maxTime,
         fps);
 
+      if (time.HasValue)
+        ctx[PropertyName.CTX_TIME] = time.Value;
+
       Scripts.SceneFromObject(
         ctx,
-        Path.GetFileName(sceneFileName),
         sceneFileName,
         textParam.Text,
         (sc) => AnimatedScene.Init(sc, textParam.Text),
@@ -156,6 +161,7 @@ namespace _062animation
       double minTime = (double)numFrom.Value;
       double maxTime = (double)numTo.Value;
       double fps     = (double)numFps.Value;
+      double time    = (double)numTime.Value;
 
       // 1. preprocessing - compute simulation, animation data, etc.
       _ = FormSupport.getScene(
@@ -167,7 +173,8 @@ namespace _062animation
         ref minTime,
         ref maxTime,
         ref fps,
-        textParam.Text);
+        textParam.Text,
+        time);
 
       // 2. compute regular frame (using the pre-computed context).
       IRayScene scene = FormSupport.getScene(
@@ -180,7 +187,8 @@ namespace _062animation
         ref minTime,
         ref maxTime,
         ref fps,
-        textParam.Text);
+        textParam.Text,
+        time);
 
       // Update GUI.
       if (ImageWidth > 0)   // preserving default (form-size) resolution
@@ -213,7 +221,7 @@ namespace _062animation
 
       // Animation time has to be set.
       if (scene is ITimeDependent sc)
-        sc.Time = (double)numTime.Value;
+        sc.Time = time;
 
       // Output image.
       outputImage = new Bitmap(ActualWidth, ActualHeight, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
