@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Globalization;
 using Rendering;
 using Utilities;
+using System.Diagnostics;
 
 namespace DavidSosvald_MichalTopfer
 {
@@ -27,6 +28,9 @@ namespace DavidSosvald_MichalTopfer
 
         public Animator (IEnumerable<IAnimatable> animatables, string keyframesFile)
         {
+#if DEBUG
+            Debug.WriteLine("Animator #" + getSerial() + " created.");
+#endif
             this.animatables = animatables.ToList();
             parameters = new Dictionary<string, Parameter>();
             foreach (var p in animatables.SelectMany(a => a.GetParams()))
@@ -34,7 +38,7 @@ namespace DavidSosvald_MichalTopfer
                 if (!parameters.ContainsKey(p.Name))
                     parameters.Add(p.Name, p);
                 else
-                    Util.Log("Parameter '" + p.Name + "' already exists.");
+                    Console.WriteLine("Parameter '" + p.Name + "' already exists.");
             }
             ReadAndSaveCameraScript(keyframesFile);
             Start = keyframes[0].Time;
@@ -139,6 +143,9 @@ namespace DavidSosvald_MichalTopfer
         public object Clone ()
         { 
             Animator cloned = new Animator();
+#if DEBUG
+            Debug.WriteLine("Animator #" + cloned.getSerial() + " cloned from # " + getSerial() + ".");
+#endif
             CopyFields(this, cloned);
             return cloned;
         }
@@ -377,6 +384,9 @@ namespace DavidSosvald_MichalTopfer
         public new object Clone ()
         {
             CameraAnimator cloned = new CameraAnimator();
+#if DEBUG
+            Debug.WriteLine("CameraAnimator #" + cloned.getSerial() + " cloned from #" + getSerial() + ".");
+#endif
             CopyFields(this, cloned);
             if (camera is ITimeDependent c)
                 cloned.camera = (ICamera)c.Clone();

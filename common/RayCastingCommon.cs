@@ -496,14 +496,34 @@ namespace Rendering
       completed = true;
     }
 
-    public static Intersection FirstIntersection (LinkedList<Intersection> list, ref Vector3d p1)
+    public static Intersection FirstIntersection (
+      LinkedList<Intersection> list,
+      ref Vector3d p1)
     {
       if (list == null || list.Count < 1)
         return null;
 
-      double p1Squared = p1.X * p1.X + p1.Y * p1.Y + p1.Z * p1.Z;
+      double p1Squared = Vector3d.Dot(p1, p1);
       foreach (Intersection i in list)
-        if (i.T > 0.0 && i.T * i.T * p1Squared > 1.0e-8)
+        if (i.T > 0.0 &&
+            i.T * i.T * p1Squared > 1.0e-8)
+          return i;
+
+      return null;
+    }
+
+    public static Intersection FirstRealIntersection (
+      LinkedList<Intersection> list,
+      ref Vector3d p1)
+    {
+      if (list == null || list.Count < 1)
+        return null;
+
+      double p1Squared = Vector3d.Dot(p1, p1);
+      foreach (Intersection i in list)
+        if (i.T > 0.0 &&
+            i.T * i.T * p1Squared > 1.0e-8 &&
+            i.Solid?.GetLocalAttribute(PropertyName.NO_SHADOW) == null)
           return i;
 
       return null;
@@ -546,18 +566,27 @@ namespace Rendering
   /// </summary>
   public class MT
   {
+    // Shared random generator (within a thred).
     [ThreadStatic] public static RandomJames rnd;
 
+    // Current pixel cooredinates.
     [ThreadStatic] public static int x;
     [ThreadStatic] public static int y;
 
     [ThreadStatic] public static double doubleX;
     [ThreadStatic] public static double doubleY;
 
+    // Internal sampling parameters.
     [ThreadStatic] public static int rank;
     [ThreadStatic] public static int total;
 
+    // Current threda's id.
     [ThreadStatic] public static int threadID;
+
+    // Uplinks to roof objects for ray-based rendering.
+    [ThreadStatic] public static IImageFunction imageFunction;
+    [ThreadStatic] public static IRenderer renderer;
+    [ThreadStatic] public static IRayScene scene;
 
     public static bool singleRayTracing    = false;
     public static bool sceneRendered       = false;
@@ -576,6 +605,29 @@ namespace Rendering
         rnd = new RandomJames(System.Threading.Thread.CurrentThread.GetHashCode() ^ DateTime.Now.Ticks);
 
       // Put TLS data init here..
+    }
+
+    /// <summary>
+    /// Start rendering in the current thread ... set rendering globals.
+    /// </summary>
+    public static void SetRendering (
+      in IRayScene sc,
+      in IImageFunction imf,
+      in IRenderer rend)
+    {
+      scene         = sc;
+      imageFunction = imf;
+      renderer      = rend;
+    }
+
+    /// <summary>
+    /// Finished rendering ... unset rendering globals.
+    /// </summary>
+    public static void ResetRendering ()
+    {
+      scene         = null;
+      imageFunction = null;
+      renderer      = null;
     }
 
     /// <summary>
