@@ -219,16 +219,16 @@ namespace _062animation
       rend.ProgressData  = progress;
       progress.Continue  = true;
 
-      // Animation time has to be set.
-      if (scene is ITimeDependent sc)
-        sc.Time = time;
-
       // Output image.
       outputImage = new Bitmap(ActualWidth, ActualHeight, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
 
       // Set TLS.
       MT.InitThreadData();
       MT.SetRendering(scene, imf, rend);
+
+      // Animation time has to be set.
+      if (scene is ITimeDependent sc)
+        sc.Time = time;
 
       Stopwatch sw = new Stopwatch();
       sw.Start();

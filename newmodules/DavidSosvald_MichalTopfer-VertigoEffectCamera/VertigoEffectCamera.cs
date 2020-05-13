@@ -5,6 +5,7 @@ using OpenTK;
 
 namespace DavidSosvald_MichalTopfer
 {
+    /*
     public class VertigoEffectCamera : IAnimatableCamera
     {
         IAnimatableCamera innerCamera;
@@ -75,4 +76,5 @@ namespace DavidSosvald_MichalTopfer
         public double Width { get => innerCamera.Width; set => innerCamera.Width = value; }
         public double Height { get => innerCamera.Height; set => innerCamera.Height = value; }
     }
+    */
 }

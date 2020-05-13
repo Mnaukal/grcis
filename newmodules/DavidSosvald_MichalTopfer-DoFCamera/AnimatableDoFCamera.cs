@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace DavidSosvald_MichalTopfer
 {
-    public class AnimatableDoFCamera : DoFCamera, IAnimatableCamera
+    public class AnimatableDoFCamera : DoFCamera //, IAnimatableCamera
     {
         public virtual IEnumerable<Animator.Parameter> GetParams ()
         {

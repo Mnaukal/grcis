@@ -6,19 +6,20 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Globalization;
 using Rendering;
-using Utilities;
 using System.Diagnostics;
 
 namespace DavidSosvald_MichalTopfer
 {
     public class Animator : ITimeDependent
     {
-        private List<IAnimatable> animatables;
         private Dictionary<string, Parameter> parameters;
         private List<Keyframe> keyframes = new List<Keyframe>();
 
         private static char[] colonSeparator = {':'};
         private static char[] commaSeparator = {','};
+
+        private TimeAndParams[] currentParams;
+        private int currentParamsIndex;
 
 #if DEBUG
         private static volatile int nextSerial = 0;
@@ -26,33 +27,30 @@ namespace DavidSosvald_MichalTopfer
         public int getSerial () => serial;
 #endif
 
-        public Animator (IEnumerable<IAnimatable> animatables, string keyframesFile)
+        public Animator (string keyframesFile, IEnumerable<Parameter> parameters, int currentParamsSize)
         {
 #if DEBUG
             Debug.WriteLine("Animator #" + getSerial() + " created.");
 #endif
-            this.animatables = animatables.ToList();
-            parameters = new Dictionary<string, Parameter>();
-            foreach (var p in animatables.SelectMany(a => a.GetParams()))
+
+            currentParams = new TimeAndParams[currentParamsSize];
+            this.parameters = new Dictionary<string, Parameter>();
+            foreach (var p in parameters)
             {
-                if (!parameters.ContainsKey(p.Name))
-                    parameters.Add(p.Name, p);
+                if (!this.parameters.ContainsKey(p.Name))
+                    this.parameters.Add(p.Name, p);
                 else
                     Console.WriteLine("Parameter '" + p.Name + "' already exists.");
             }
-            ReadAndSaveCameraScript(keyframesFile);
+            ReadAndSaveKeyframes(keyframesFile);
             Start = keyframes[0].Time;
             End = keyframes[keyframes.Count - 1].Time;
             Time = Start;
         }
 
-        public Animator (IAnimatable animatable, string keyframesFile)
-            : this(new IAnimatable[] { animatable }, keyframesFile)
-        { }
+        public Animator (string keyframesFile, IEnumerable<Parameter> parameters) : this(keyframesFile, parameters, Environment.ProcessorCount) { }
 
-        protected Animator () { }
-
-        private void ReadAndSaveCameraScript (string fileName)
+        private void ReadAndSaveKeyframes (string fileName)
         {
             StreamReader sr;
             try
@@ -61,7 +59,7 @@ namespace DavidSosvald_MichalTopfer
             }
             catch (IOException)
             {
-                throw new IOException("Please specify a file with camera script.");
+                throw new IOException("Error opening keyframes file: '" + fileName + "'.");
             }
 
             try
@@ -106,7 +104,7 @@ namespace DavidSosvald_MichalTopfer
             }
             catch (IOException)
             {
-                throw new IOException("An error occurred while reading the script file.");
+                throw new IOException("Error reading keyframes file: '" + fileName + "'.");
             }
         }
 
@@ -114,10 +112,8 @@ namespace DavidSosvald_MichalTopfer
         {
             foreach (Parameter param in parameters.Values)
                 if (param.Required && !keyframeParams.ContainsKey(param.Name))
-                    throw new ArgumentException("The value of '" + param.Name + "' parameter wasn't provided in the first key frame.");
+                    throw new ArgumentException("The value of '" + param.Name + "' parameter wasn't provided in the first keyframe.");
         }
-
-
 
         private Dictionary<string, object> CopyDictionary (Dictionary<string, object> original)
         {
@@ -134,45 +130,24 @@ namespace DavidSosvald_MichalTopfer
             get => time;
             set {
                 time = value;
-                Dictionary<string, object> currentParams = InterpolateKeyframes();
-                foreach (IAnimatable a in animatables)
-                    a.ApplyParams(currentParams);
+                currentParams[currentParamsIndex].T = time;
+                currentParams[currentParamsIndex].P = InterpolateKeyframes(time);
+                currentParamsIndex = (currentParamsIndex + 1) % currentParams.Length;
             }
         }
         private double time;
+
         public object Clone ()
         { 
-            Animator cloned = new Animator();
-#if DEBUG
-            Debug.WriteLine("Animator #" + cloned.getSerial() + " cloned from # " + getSerial() + ".");
-#endif
-            CopyFields(this, cloned);
-            return cloned;
-        }
-        protected static void CopyFields(Animator from, Animator to)
-        {
-            List<IAnimatable> clonedAnimatables = new List<IAnimatable>(from.animatables.Count);
-            foreach (IAnimatable a in from.animatables)
-            {
-                if (a is ITimeDependent t)
-                    clonedAnimatables.Add((IAnimatable)t.Clone());
-                else
-                    clonedAnimatables.Add(a);
-            }
-            to.animatables = clonedAnimatables;
-            to.keyframes = from.keyframes;
-            to.parameters = from.parameters;
-            to.Start = from.Start;
-            to.End = from.End;
-            to.Time = from.Time;
+            return this;
         }
 
-        private Dictionary<string, object> InterpolateKeyframes()
+        private Dictionary<string, object> InterpolateKeyframes(double time)
         {
             int i = 0;
             for (; i < keyframes.Count; i++)
             {
-                if (keyframes[i].Time > Time)
+                if (keyframes[i].Time > time)
                     break;
             }
             i--;
@@ -180,7 +155,7 @@ namespace DavidSosvald_MichalTopfer
             Keyframe current = keyframes[i];
             Keyframe next = i < keyframes.Count - 1 ?  keyframes[i+1] : keyframes[keyframes.Count - 1];
             Keyframe later = i < keyframes.Count - 2 ? keyframes[i + 2] : keyframes[keyframes.Count - 1];
-            double t = (Time - current.Time) / (next.Time - current.Time);
+            double t = (time - current.Time) / (next.Time - current.Time);
             if (double.IsNaN(t) && next.Time == current.Time)
                 t = 1;
 
@@ -200,6 +175,26 @@ namespace DavidSosvald_MichalTopfer
             return cameraParams;
         }
 
+        /// <summary>
+        /// Returns the value of 'paramName' in 'time'. Fast if 'time' is one of the cached values (computed when Time property is set), slow otherwise.
+        /// </summary>
+        public object getParam(string paramName, double time)
+        {
+            Dictionary<string, object> p = getParams(time);
+            if (p.TryGetValue(paramName, out object value))
+                return value;
+            else
+                throw new ArgumentException("paramName '" + paramName + "' not found.");
+        }
+
+        /// <summary>
+        /// Returns the dictionary of parameters in 'time'. Fast if 'time' is one of the cached values (computed when Time property is set), slow otherwise.
+        /// </summary>
+        public Dictionary<string, object> getParams (double time)
+        {
+            return currentParams.FirstOrDefault(x => x.T == time).P ?? InterpolateKeyframes(time);
+        }
+
         private class Keyframe
         {
             public readonly double Time;
@@ -210,6 +205,12 @@ namespace DavidSosvald_MichalTopfer
                 Time = time;
                 this.parameters = parameters;
             }
+        }
+
+        private struct TimeAndParams
+        {
+            public double T;
+            public Dictionary<string, object> P;
         }
 
         public class Parameter
@@ -363,57 +364,37 @@ namespace DavidSosvald_MichalTopfer
         }
     }
 
-    public class CameraAnimator : Animator, ICamera, ICloneable
+    public class AnimatedStaticCamera : StaticCamera, ITimeDependent
     {
-        ICamera camera;
-
-        public CameraAnimator (IAnimatableCamera camera, IEnumerable<IAnimatable> animatables, string keyframesFile)
-            : base (animatables.Concat(new[] { camera }), keyframesFile)
-        {
-            this.camera = camera;
+        public double Start { get; set; }
+        public double End { get; set; }
+        private double time;
+        public double Time {
+            get => time;
+            set {
+                time = value;
+                SetTime(value);
+            }
         }
 
-        public CameraAnimator (IAnimatableCamera camera, string keyframesFile)
-            : base(camera, keyframesFile)
-        {
-            this.camera = camera;
-        }
-
-        protected CameraAnimator() { }
-
-        public new object Clone ()
-        {
-            CameraAnimator cloned = new CameraAnimator();
-#if DEBUG
-            Debug.WriteLine("CameraAnimator #" + cloned.getSerial() + " cloned from #" + getSerial() + ".");
-#endif
-            CopyFields(this, cloned);
-            if (camera is ITimeDependent c)
-                cloned.camera = (ICamera)c.Clone();
-            else
-                cloned.camera = camera;
-            return cloned;
-        }
-
-        public double AspectRatio { get => camera.AspectRatio; set => camera.AspectRatio = value; }
-        public double Width { get => camera.Width; set => camera.Width = value; }
-        public double Height { get => camera.Height; set => camera.Height = value; }
-
-        public bool GetRay (double x, double y, out Vector3d p0, out Vector3d p1) => camera.GetRay(x, y, out p0, out p1);
-    }
-
-    public class AnimatableStaticCamera : StaticCamera, IAnimatableCamera
-    {
-        public virtual IEnumerable<Animator.Parameter> GetParams ()
+        public static IEnumerable<Animator.Parameter> GetParams (string positionParamName = "position", string directionParamName = "direction", string angleParamName = "angle")
         {
             return new Animator.Parameter[] {
-                new Animator.Parameter("position", Animator.Parsers.ParseVector3, Animator.Interpolators.Catmull_Rom, true),
-                new Animator.Parameter("direction", Animator.Parsers.ParseVector3, Animator.Interpolators.Catmull_Rom, true),
-                new Animator.Parameter("angle", Animator.Parsers.ParseDouble, Animator.Interpolators.LERP)
+                new Animator.Parameter(positionParamName, Animator.Parsers.ParseVector3, Animator.Interpolators.Catmull_Rom, true),
+                new Animator.Parameter(directionParamName, Animator.Parsers.ParseVector3, Animator.Interpolators.Catmull_Rom, true),
+                new Animator.Parameter(angleParamName, Animator.Parsers.ParseDouble, Animator.Interpolators.LERP)
             };
         }
 
-        public virtual void ApplyParams (Dictionary<string, object> p)
+        void SetTime(double time)
+        {
+            if (MT.scene == null)
+                return;
+            Dictionary<string, object> p = ((Animator)MT.scene.Animator).getParams(time);
+            ApplyParams(p);
+        }
+
+        void ApplyParams (Dictionary<string, object> p)
         {
             try
             {
@@ -428,16 +409,34 @@ namespace DavidSosvald_MichalTopfer
             }
             prepare();
         }
+
+        public object Clone ()
+        {
+            AnimatedStaticCamera c = new AnimatedStaticCamera();
+            c.width = width;
+            c.height = height;
+            c.center = center;
+            c.direction = direction;
+            c.up = up;
+            c.hAngle = hAngle;
+            c.prepare();
+            c.Start = Start;
+            c.End = End;
+            c.Time = Time;
+            return c;
+        }
+
+#if DEBUG
+        private static volatile int nextSerial = 0;
+        private readonly int serial = nextSerial++;
+        public int getSerial () => serial;
+#endif
     }
 
-    public interface IAnimatable
-    {
-        IEnumerable<Animator.Parameter> GetParams ();
-        void ApplyParams (Dictionary<string, object> p);
-    }
 
-    public interface IAnimatableCamera : IAnimatable, ICamera
-    { }
+
+
+    /*
 
     public class AnimatableISceneNode : IAnimatable
     {
@@ -521,4 +520,5 @@ namespace DavidSosvald_MichalTopfer
                 m.ApplyParams(p);
         }
     }
+    */
 }
