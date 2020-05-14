@@ -44,6 +44,9 @@ namespace DavidSosvald_MichalTopfer
 
         public void RegisterParams(IEnumerable<Parameter> parameters)
         {
+            if (keyframes.Count > 0)
+                throw new InvalidOperationException("All params have to be registered before loading keyframes.");
+
             foreach (var p in parameters)
             {
                 if (!this.parameters.ContainsKey(p.Name))
@@ -377,9 +380,8 @@ namespace DavidSosvald_MichalTopfer
         }
     }
 
-    public interface ITimeDependentCamera : ITimeDependent, ICamera { }
-
-    public class KeyframesAnimatedStaticCamera : StaticCamera, ITimeDependent
+    public class KeyframesAnimatedStaticCamera : StaticCamera, ITimeDependent,
+        IVertigoInnerCamera // delete this line if you don't use the VertigoEffectCamera extension
     {
         public double Start { get; set; }
         public double End { get; set; }
@@ -460,6 +462,24 @@ namespace DavidSosvald_MichalTopfer
         private readonly int serial = nextSerial++;
         public int getSerial () => serial;
 #endif
+
+        public Vector3d GetPosition () => center;
+
+        public double GetAngle () => hAngle;
+
+        public void SetAngle (double angle)
+        {
+            hAngle = angle;
+            prepare();
+        }
+
+        public Vector3d GetDirection () => direction;
+
+        public void SetDirection (Vector3d direction)
+        {
+            this.direction = direction;
+            prepare();
+        }
     }
 
 
