@@ -80,9 +80,7 @@ namespace _062animation
     /// Create a scene from the defined CS-script file-name.
     /// Returns null if failed.
     /// </summary>
-    /// <param name="preprocessing">Invoke the script in the "preprocessing" mode?</param>
     public IRayScene SceneFromScript (
-      bool preprocessing,
       out IImageFunction imf,
       out IRenderer rend,
       ref int width,
@@ -101,11 +99,11 @@ namespace _062animation
         return null;
       }
 
-      if (preprocessing ||
-          ctx == null)
+      bool preprocessing = ctx == null;
+      if (preprocessing)
         ctx = new ScriptContext();    // we need a new context object for each computing batch..
 
-      Scripts.ContextInit(
+      if (Scripts.ContextInit(
         ctx,
         preprocessing ? new AnimatedRayScene() : null,
         Path.GetFileName(sceneFileName),
@@ -114,19 +112,22 @@ namespace _062animation
         superSampling,
         minTime,
         maxTime,
-        fps);
+        fps))
+      {
+        // Script needs to be called.
 
-      if (time.HasValue)
-        ctx[PropertyName.CTX_TIME] = time.Value;
+        if (time.HasValue)
+          ctx[PropertyName.CTX_TIME] = time.Value;
 
-      Scripts.SceneFromObject(
-        ctx,
-        sceneFileName,
-        textParam.Text,
-        (sc) => AnimatedScene.Init(sc, textParam.Text),
-        SetText);
+        Scripts.SceneFromObject(
+          ctx,
+          sceneFileName,
+          textParam.Text,
+          (sc) => AnimatedScene.Init(sc, textParam.Text),
+          SetText);
+      }
 
-      DefaultRayScene scene = Scripts.ContextMining(
+      IRayScene scene = Scripts.ContextMining(
         ctx,
         out imf,
         out rend,
@@ -163,9 +164,11 @@ namespace _062animation
       double fps     = (double)numFps.Value;
       double time    = (double)numTime.Value;
 
+      // Force preprocessing.
+      ctx = null;
+
       // 1. preprocessing - compute simulation, animation data, etc.
       _ = FormSupport.getScene(
-        true,
         out _, out _,
         ref ActualWidth,
         ref ActualHeight,
@@ -178,7 +181,6 @@ namespace _062animation
 
       // 2. compute regular frame (using the pre-computed context).
       IRayScene scene = FormSupport.getScene(
-        false,
         out IImageFunction imf,
         out IRenderer rend,
         ref ActualWidth,
@@ -219,9 +221,6 @@ namespace _062animation
       rend.ProgressData  = progress;
       progress.Continue  = true;
 
-      // Output image.
-      outputImage = new Bitmap(ActualWidth, ActualHeight, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-
       // Set TLS.
       MT.InitThreadData();
       MT.SetRendering(scene, imf, rend);
@@ -230,13 +229,16 @@ namespace _062animation
       if (scene is ITimeDependent sc)
         sc.Time = time;
 
+      // Output image.
+      outputImage = new Bitmap(ActualWidth, ActualHeight, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+
       Stopwatch sw = new Stopwatch();
       sw.Start();
 
       rend.RenderRectangle(outputImage, 0, 0, ActualWidth, ActualHeight);
 
       sw.Stop();
-      labelElapsed.Text = string.Format("Elapsed: {0:f1}s", 1.0e-3 * sw.ElapsedMilliseconds);
+      labelElapsed.Text = string.Format(CultureInfo.InvariantCulture, "Elapsed: {0:f1}s", 1.0e-3 * sw.ElapsedMilliseconds);
 
       pictureBox1.Image = outputImage;
 
@@ -550,9 +552,11 @@ namespace _062animation
 
       WorkerThreadInit[] wti = new WorkerThreadInit[threads];
 
+      // Force preprocessing.
+      ctx = null;
+
       // 1. preprocessing - compute simulation, animation data, etc.
-      FormSupport.getScene(
-        true,
+      _ = FormSupport.getScene(
         out _, out _,
         ref ActualWidth,
         ref ActualHeight,
@@ -566,7 +570,6 @@ namespace _062animation
       {
         // 2. initialize data for regular frames (using the pre-computed context).
         IRayScene sc = FormSupport.getScene(
-          false,
           out IImageFunction imf,
           out IRenderer rend,
           ref ActualWidth,

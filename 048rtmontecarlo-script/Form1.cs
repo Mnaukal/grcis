@@ -154,7 +154,6 @@ namespace Rendering
     /// Can handle InitSceneDelegate, InitSceneParamDelegate or CSscript file-name
     /// </summary>
     public IRayScene SceneByComboBox (
-      bool preprocessing,
       out IImageFunction imf,
       out IRenderer rend,
       ref int width,
@@ -166,24 +165,26 @@ namespace Rendering
       if (sceneRepository.TryGetValue(sceneName, out object definition))
       {
         // Try the CS-script file.
-        if (preprocessing ||
-            ctx == null)
+        if (ctx == null)
           ctx = new ScriptContext();    // we need a new context object for each computing batch..
 
-        Scripts.ContextInit(
+        if (Scripts.ContextInit(
           ctx,
           null,
           sceneName,
           width,
           height,
-          superSampling);
+          superSampling))
+        {
+          // Script needs to be called.
 
-        Scripts.SceneFromObject(
-          ctx,
-          definition,
-          TextParam.Text,
-          (sc) => Scenes.DefaultScene(sc),
-          SetText);
+          Scripts.SceneFromObject(
+            ctx,
+            definition,
+            TextParam.Text,
+            (sc) => Scenes.DefaultScene(sc),
+            SetText);
+        }
 
         double minTime = 0.0;
         double maxTime = 10.0;
@@ -281,20 +282,6 @@ namespace Rendering
       }
     }
 
-    /// <summary>
-    /// Routine of one worker-thread.
-    /// Result image and rendering progress are the only two shared objects.
-    /// </summary>
-    /// <param name="spec">Thread-specific data (worker-thread-selector).</param>
-    private void RenderWorker (object spec)
-    {
-      if (spec is WorkerThreadInit init)
-      {
-        MT.InitThreadData();
-        init.rend.RenderRectangle(init.image, 0, 0, init.width, init.height, init.sel);
-      }
-    }
-
     private IImageFunction getImageFunction (IImageFunction imf, IRayScene sc)
     {
       if (imf == null)    // The script didn't define an image-function..
@@ -319,113 +306,6 @@ namespace Rendering
       return FormSupport.getRenderer((int)NumericSupersampling.Value, CheckJitter.Checked ? 1.0 : 0.0, TextParam.Text);
     }
 
-#if OLD
-    /// <summary>
-    /// [Re]-renders the whole image (in separate thread). OLD VERSION!!!
-    /// </summary>
-    private void RenderImage_OLD ()
-    {
-      Cursor.Current = Cursors.WaitCursor;
-
-      // Determine output image size.
-      int width = ImageWidth;
-      if (width <= 0)
-        width = panel1.Width;
-
-      int height = ImageHeight;
-      if (height <= 0)
-        height = panel1.Height;
-
-      Bitmap newImage = new Bitmap(width, height, PixelFormat.Format24bppRgb);
-
-      int threads = CheckMultithreading.Checked ? Environment.ProcessorCount : 1;
-      int t; // thread ordinal number
-      int superSampling = (int)NumericSupersampling.Value;
-
-      WorkerThreadInit[] wti = new WorkerThreadInit[threads];
-
-      // 1. preprocessing - compute simulation, animation data, etc.
-      _ = FormSupport.getScene(true, out _, out _, superSampling, TextParam.Text);
-
-      // Separate renderer, image function and the scene for each thread (safety precaution).
-      for (t = 0; t < threads; t++)
-      {
-        // 2. initialize data for regular frames (using the pre-computed context).
-        IRayScene sc  = FormSupport.getScene(
-          false,
-          out IImageFunction imf,
-          out IRenderer rend,
-          superSampling,
-          TextParam.Text);
-
-        // IImageFunction.
-        imf = getImageFunction(imf, sc);
-        imf.Width  = width;
-        imf.Height = height;
-
-        // IRenderer.
-        if (rend == null)   // not defined in the script
-          rend = getRenderer();
-        rend.ImageFunction = imf;
-        rend.Width         = width;
-        rend.Height        = height;
-        rend.Adaptive      = 8;
-        rend.ProgressData  = progress;
-
-        wti[t] = new WorkerThreadInit(rend, sc as ITimeDependent, imf as ITimeDependent, newImage, width, height, t, threads);
-      }
-
-      progress.SyncInterval = ((width * (long)height) > (2L << 20)) ? 3000L : 1000L;
-      progress.Reset();
-      CSGInnerNode.ResetStatistics();
-
-      lock (sw)
-        sw.Restart();
-
-      if (threads > 1)
-      {
-        Thread[] pool = new Thread[threads];
-        for (t = 0; t < threads; t++)
-          pool[t] = new Thread(new ParameterizedThreadStart(RenderWorker));
-        for (t = threads; --t >= 0;)
-          pool[t].Start(wti[t]);
-
-        for (t = 0; t < threads; t++)
-        {
-          pool[t].Join();
-          pool[t] = null;
-        }
-      }
-      else
-      {
-        MT.InitThreadData();
-        wti[0].rend.RenderRectangle(newImage, 0, 0, width, height);
-      }
-
-      long elapsed;
-      lock (sw)
-      {
-        sw.Stop();
-        elapsed = sw.ElapsedMilliseconds;
-      }
-
-      string msg = string.Format(CultureInfo.InvariantCulture,
-                                 "{0:f1}s  [ {1}x{2}, mt{3}, r{4:#,#}k, i{5:#,#}k, bb{6:#,#}k, t{7:#,#}k ]",
-                                 1.0e-3 * elapsed, width, height, threads,
-                                 (Intersection.countRays + 500L) / 1000L,
-                                 (Intersection.countIntersections + 500L) / 1000L,
-                                 (CSGInnerNode.countBoundingBoxes + 500L) / 1000L,
-                                 (CSGInnerNode.countTriangles + 500L) / 1000L );
-      SetText(msg);
-      Console.WriteLine(@"Rendering finished: " + msg);
-      SetImage(newImage);
-
-      Cursor.Current = Cursors.Default;
-
-      StopRendering();
-    }
-#endif
-
     /// <summary>
     /// [Re]-renders the whole image (in separate thread)
     /// </summary>
@@ -444,9 +324,11 @@ namespace Rendering
 
       int superSampling = (int)NumericSupersampling.Value;
 
+      // Force preprocessing.
+      ctx = null;
+
       // 1. preprocessing - compute simulation, animation data, etc.
       _ = FormSupport.getScene(
-        true,
         out _, out _,
         ref ActualWidth,
         ref ActualHeight,
@@ -455,7 +337,6 @@ namespace Rendering
 
       // 2. compute regular frame (using the pre-computed context).
       IRayScene scene = FormSupport.getScene(
-        false,
         out IImageFunction imf,
         out IRenderer rend,
         ref ActualWidth,
@@ -708,8 +589,18 @@ namespace Rendering
       if (dirty || imfs == null)
       {
         int ss = 1;
+
+        // Force preprocess.
+        ctx = null;
+
+        _ = FormSupport.getScene(
+          out _, out _,
+          ref ActualWidth,
+          ref ActualHeight,
+          ref ss,
+          TextParam.Text);
+
         sc = FormSupport.getScene(
-          false,
           out imfs,
           out rend,
           ref ActualWidth,
