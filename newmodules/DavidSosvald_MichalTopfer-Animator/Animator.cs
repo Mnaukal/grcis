@@ -399,9 +399,8 @@ namespace DavidSosvald_MichalTopfer
         private readonly string angleParamName;
 
         public KeyframesAnimatedStaticCamera(Animator animator, string positionParamName = "position", string directionParamName = "direction", string angleParamName = "angle") : this(positionParamName, directionParamName, angleParamName)
-        {
-            
-            animator.RegisterParams(GetParams());
+        {   
+            animator?.RegisterParams(GetParams());
         }
 
         private KeyframesAnimatedStaticCamera(string positionParamName, string directionParamName, string angleParamName)
@@ -485,35 +484,25 @@ namespace DavidSosvald_MichalTopfer
         }
     }
 
-
-
-
-    /*
-
-    public class AnimatableISceneNode : IAnimatable
+    public class SceneNodeTransformAnimator : AnimatedCSGInnerNode
     {
-        ISceneNode node;
         string translationParamName, rotationParamName, scaleParamName;
         Vector3d defaultTranslation, defaultRotation, defaultScale;
 
-        public AnimatableISceneNode(ISceneNode node, string translationParamName = null, string rotationParamName = null, string scaleParamName = null, Vector3d? defaultTranslation = null, Vector3d? defaultRotation = null, Vector3d? defaultScale = null)
+        public SceneNodeTransformAnimator (Animator animator, string translationParamName = null, string rotationParamName = null, string scaleParamName = null, Vector3d? defaultTranslation = null, Vector3d? defaultRotation = null, Vector3d? defaultScale = null) : base(SetOperation.Union)
         {
-            this.node = node;
             this.translationParamName = translationParamName;
             this.rotationParamName = rotationParamName;
             this.scaleParamName = scaleParamName;
             this.defaultTranslation = defaultTranslation ?? Vector3d.Zero;
             this.defaultRotation = defaultRotation ?? Vector3d.Zero;
             this.defaultScale = defaultScale ?? Vector3d.One;
+            animator?.RegisterParams(GetParams());
         }
 
         public IEnumerable<Animator.Parameter> GetParams ()
         {
-            List<Animator.Parameter> p;
-            if (node is IAnimatable n)
-                p = n.GetParams().ToList();
-            else
-                p = new List<Animator.Parameter>();
+            List<Animator.Parameter> p = new List<Animator.Parameter>();
 
             if (translationParamName != null)
                 p.Add(new Animator.Parameter(translationParamName, Animator.Parsers.ParseVector3, Animator.Interpolators.Catmull_Rom, true));
@@ -524,20 +513,39 @@ namespace DavidSosvald_MichalTopfer
             return p;
         }
 
+        protected override void setTime (double time)
+        {
+            if (MT.scene == null)
+                return;
+            Dictionary<string, object> p = ((Animator)MT.scene.Animator).getParams(time);
+            ApplyParams(p);
+
+            base.setTime(time);
+        }
+
         public void ApplyParams (Dictionary<string, object> p)
         {
             Vector3d translation = translationParamName != null ? (Vector3d)p[translationParamName] : defaultTranslation;
             Vector3d rotation = rotationParamName != null ? (Vector3d)p[rotationParamName] : defaultRotation;
             Vector3d scale = scaleParamName != null ? (Vector3d)p[scaleParamName] : defaultScale;
 
+            ToParent = Matrix4d.Scale(scale) * Matrix4d.Rotate(Quaterniond.FromEulerAngles(rotation)) * Matrix4d.CreateTranslation(translation);
+            FromParent = ToParent.Inverted();
+        }
 
-            node.ToParent = Matrix4d.Scale(scale) * Matrix4d.Rotate(Quaterniond.FromEulerAngles(rotation)) * Matrix4d.CreateTranslation(translation);
-            node.FromParent = node.ToParent.Inverted();
-
-            if (node is IAnimatable n)
-                n.ApplyParams(p);
+        public override object Clone()
+        {
+            SceneNodeTransformAnimator a = new SceneNodeTransformAnimator(null, translationParamName, rotationParamName, scaleParamName, defaultTranslation, defaultRotation, defaultScale);
+            a.Start = Start;
+            a.End = End;
+            ShareCloneAttributes(a);
+            ShareCloneChildren(a);
+            a.Time = time;
+            return a;
         }
     }
+
+    /*
 
     public class AnimatableMaterial : IAnimatable
     {

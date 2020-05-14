@@ -21,8 +21,8 @@ if (Util.TryParseBool(context, PropertyName.CTX_PREPROCESSING))
     string keyframes_file = Path.Combine(Path.GetDirectoryName((string)context[PropertyName.CTX_SCRIPT_PATH]), "AnimatorExample.yaml");
     scene.Animator = new Animator(keyframes_file);
 
-    context[PropertyName.CTX_START_ANIM] = scene.Animator.Start;
-    context[PropertyName.CTX_END_ANIM] = scene.Animator.End;
+    //context[PropertyName.CTX_START_ANIM] = scene.Animator.Start;
+    //context[PropertyName.CTX_END_ANIM] = scene.Animator.End;
     context[PropertyName.CTX_FPS] = 25.0;
 
     return;
@@ -68,24 +68,26 @@ root.InsertChild(pl, Matrix4d.RotateX(-MathHelper.PiOver2) * Matrix4d.CreateTran
 
 // Cubes
 Cube c;
+SceneNodeTransformAnimator ac;
 
-/*
 // animated cubes
 c = new Cube();
-AnimatableISceneNode movingCube = new AnimatableISceneNode(c, "t1", null, "s1");
-root.InsertChild(c, Matrix4d.Identity);
+ac = new SceneNodeTransformAnimator(a, "t1", null, "s1");
+ac.InsertChild(c, Matrix4d.Identity);
+root.InsertChild(ac, Matrix4d.Identity);
 c.SetAttribute(PropertyName.MATERIAL, r);
 
 c = new Cube();
-AnimatableISceneNode movingCube2 = new AnimatableISceneNode(c, null, "r1", null, new Vector3d(-5, -0.5, 0));
-root.InsertChild(c, Matrix4d.Identity);
+ac = new SceneNodeTransformAnimator(a, null, "r1", null, new Vector3d(-5, -0.5, 0));
+ac.InsertChild(c, Matrix4d.Identity);
+root.InsertChild(ac, Matrix4d.Identity);
 c.SetAttribute(PropertyName.MATERIAL, g);
 
 c = new Cube();
-AnimatableISceneNode movingCube3 = new AnimatableISceneNode(c, null, "r1", null, new Vector3d(6, -0.5, 0));
-root.InsertChild(c, Matrix4d.Identity);
+ac = new SceneNodeTransformAnimator(a, null, "r1", null, new Vector3d(6, -0.5, 0));
+ac.InsertChild(c, Matrix4d.Identity);
+root.InsertChild(ac, Matrix4d.Identity);
 c.SetAttribute(PropertyName.MATERIAL, g);
-*/
 
 // still cubes:
 // front row
