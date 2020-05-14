@@ -291,7 +291,7 @@
     <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-Animator\Animator.cs">
       <Link>rt_extensions\AnimatedCamera.cs</Link>
     </Compile>
-    <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-DoFCamera\AnimatableDoFCamera.cs" />
+    <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-DoFCamera\KeyframesAnimatedDoFCamera.cs" />
     <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-DoFCamera\DoFCamera.cs">
       <Link>rt_extensions\DoFCamera.cs</Link>
     </Compile>

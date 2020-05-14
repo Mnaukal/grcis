@@ -1,0 +1,14 @@
+0:
+    position: -5, 1, 0
+    direction: 1, 0, 0.4
+    angle: 70
+    focus: 5
+    max_shift: 0.1
+4: 
+    focus: 2.3
+6:
+    focus: 2.3
+9:
+    focus: 5
+10:
+    focus: 5

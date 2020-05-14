@@ -398,15 +398,18 @@ namespace DavidSosvald_MichalTopfer
         private readonly string directionParamName;
         private readonly string angleParamName;
 
-        public KeyframesAnimatedStaticCamera(Animator animator, string positionParamName = "position", string directionParamName = "direction", string angleParamName = "angle")
+        public KeyframesAnimatedStaticCamera(Animator animator, string positionParamName = "position", string directionParamName = "direction", string angleParamName = "angle") : this(positionParamName, directionParamName, angleParamName)
+        {
+            
+            animator.RegisterParams(GetParams());
+        }
+
+        private KeyframesAnimatedStaticCamera(string positionParamName, string directionParamName, string angleParamName)
         {
             this.positionParamName = positionParamName;
             this.directionParamName = directionParamName;
             this.angleParamName = angleParamName;
-            animator.RegisterParams(GetParams());
         }
-
-        private KeyframesAnimatedStaticCamera() { }
 
         public IEnumerable<Animator.Parameter> GetParams ()
         {
@@ -429,10 +432,10 @@ namespace DavidSosvald_MichalTopfer
         {
             try
             {
-                center = (Vector3d)p["position"];
-                direction = (Vector3d)p["direction"];
-                if (p.ContainsKey("angle"))
-                    hAngle = MathHelper.DegreesToRadians((double)p["angle"]);
+                center = (Vector3d)p[positionParamName];
+                direction = (Vector3d)p[directionParamName];
+                if (p.ContainsKey(angleParamName))
+                    hAngle = MathHelper.DegreesToRadians((double)p[angleParamName]);
             }
             catch (KeyNotFoundException)
             {
@@ -443,7 +446,7 @@ namespace DavidSosvald_MichalTopfer
 
         public object Clone ()
         {
-            KeyframesAnimatedStaticCamera c = new KeyframesAnimatedStaticCamera();
+            KeyframesAnimatedStaticCamera c = new KeyframesAnimatedStaticCamera(positionParamName, directionParamName, angleParamName);
             c.width = width;
             c.height = height;
             c.center = center;

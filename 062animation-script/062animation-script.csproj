@@ -173,8 +173,8 @@
     <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-Animator\Animator.cs">
       <Link>rt_extensions\AnimatedCamera.cs</Link>
     </Compile>
-    <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-DoFCamera\AnimatableDoFCamera.cs">
-      <Link>rt_extensions\AnimatableDoFCamera.cs</Link>
+    <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-DoFCamera\KeyframesAnimatedDoFCamera.cs">
+      <Link>rt_extensions\KeyframesAnimatedDoFCamera.cs</Link>
     </Compile>
     <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-DoFCamera\DoFCamera.cs">
       <Link>rt_extensions\DoFCamera.cs</Link>
