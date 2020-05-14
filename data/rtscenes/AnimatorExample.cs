@@ -56,9 +56,9 @@ scene.Camera = new KeyframesAnimatedStaticCamera(a);
 Dictionary<string, string> p = Util.ParseKeyValueList(param);
 
 // materials
-PhongMaterial pm = new PhongMaterial(new double[] { 1.0, 0.6, 0.1 }, 0.1, 0.8, 0.2, 16);
-PhongMaterial r = new PhongMaterial(new double[] { 0.8, 0.1, 0.1 }, 0.1, 0.8, 0.2, 16);
-PhongMaterial g = new PhongMaterial(new double[] { 0.1, 1.0, 0.2 }, 0.1, 0.8, 0.2, 16);
+PhongMaterial pm = new PhongMaterial(new double[] { 1.0, 0.6, 0.1 }, 0.1, 0.8, 0, 16);
+PhongMaterial r = new PhongMaterial(new double[] { 0.8, 0.1, 0.1 }, 0.1, 0.8, 0, 16);
+PhongMaterial g = new PhongMaterial(new double[] { 0.1, 1.0, 0.2 }, 0.1, 0.8, 0, 16);
 
 // Base plane
 Plane pl = new Plane();
@@ -91,21 +91,21 @@ c.SetAttribute(PropertyName.MATERIAL, g);
 
 // still cubes:
 // front row
+SceneNodeMaterialAnimator front = new SceneNodeMaterialAnimator(a);
+root.InsertChild(front, Matrix4d.Identity);
+PhongMaterial m = new PhongMaterial(new double[] { 0, 0, 0 }, 0.1, 0.8, 0, 16);
+front.SetAttribute(PropertyName.MATERIAL, m);
+
 c = new Cube();
-root.InsertChild(c, Matrix4d.RotateY(0.6) * Matrix4d.CreateTranslation(-3.5, -0.8, 0.0));
-c.SetAttribute(PropertyName.MATERIAL, pm);
+front.InsertChild(c, Matrix4d.RotateY(0.6) * Matrix4d.CreateTranslation(-3.5, -0.8, 0.0));
 c = new Cube();
-root.InsertChild(c, Matrix4d.RotateY(1.2) * Matrix4d.CreateTranslation(-1.5, -0.8, 0.0));
-c.SetAttribute(PropertyName.MATERIAL, pm);
+front.InsertChild(c, Matrix4d.RotateY(1.2) * Matrix4d.CreateTranslation(-1.5, -0.8, 0.0));
 c = new Cube();
-root.InsertChild(c, Matrix4d.RotateY(1.8) * Matrix4d.CreateTranslation(0.5, -0.8, 0.0));
-c.SetAttribute(PropertyName.MATERIAL, pm);
+front.InsertChild(c, Matrix4d.RotateY(1.8) * Matrix4d.CreateTranslation(0.5, -0.8, 0.0));
 c = new Cube();
-root.InsertChild(c, Matrix4d.RotateY(2.4) * Matrix4d.CreateTranslation(2.5, -0.8, 0.0));
-c.SetAttribute(PropertyName.MATERIAL, pm);
+front.InsertChild(c, Matrix4d.RotateY(2.4) * Matrix4d.CreateTranslation(2.5, -0.8, 0.0));
 c = new Cube();
-root.InsertChild(c, Matrix4d.RotateY(3.0) * Matrix4d.CreateTranslation(4.5, -0.8, 0.0));
-c.SetAttribute(PropertyName.MATERIAL, pm);
+front.InsertChild(c, Matrix4d.RotateY(3.0) * Matrix4d.CreateTranslation(4.5, -0.8, 0.0));
 // back row:
 c = new Cube();
 root.InsertChild(c, Matrix4d.RotateX(3.5) * Matrix4d.CreateTranslation(-4.0, 1.0, 2.0));

@@ -545,40 +545,53 @@ namespace DavidSosvald_MichalTopfer
         }
     }
 
-    /*
-
-    public class AnimatableMaterial : IAnimatable
+    public class SceneNodeMaterialAnimator : AnimatedCSGInnerNode
     {
-        IMaterial material;
         string colorParamName;
 
-        public AnimatableMaterial(IMaterial material, string colorParamName)
-        {
-            this.material = material;
+        public SceneNodeMaterialAnimator (Animator animator, string colorParamName = "color") : base(SetOperation.Union)
+        { 
             this.colorParamName = colorParamName;
+            animator?.RegisterParams(GetParams());
         }
 
         public IEnumerable<Animator.Parameter> GetParams ()
         {
-            List<Animator.Parameter> p;
-            if (material is IAnimatable m)
-                p = m.GetParams().ToList();
-            else
-                p = new List<Animator.Parameter>();
+            return new Animator.Parameter[] {
+                new Animator.Parameter(colorParamName, Animator.Parsers.ParseDoubleArray, Animator.Interpolators.Catmull_Rom, true)
+            };
+        }
 
-            if (colorParamName != null)
-                p.Add(new Animator.Parameter(colorParamName, Animator.Parsers.ParseDoubleArray, Animator.Interpolators.Catmull_Rom, true));
-            return p;
+        protected override void setTime (double time)
+        {
+            if (MT.scene == null)
+                return;
+            Dictionary<string, object> p = ((Animator)MT.scene.Animator).getParams(time);
+            ApplyParams(p);
         }
 
         public void ApplyParams (Dictionary<string, object> p)
         {
             double[] color = (double[])p[colorParamName];
+            IMaterial material = (IMaterial)GetAttribute(PropertyName.MATERIAL);
             material.Color = color;
-
-            if (material is IAnimatable m)
-                m.ApplyParams(p);
         }
+
+        public override object Clone ()
+        {
+            SceneNodeMaterialAnimator a = new SceneNodeMaterialAnimator(null, colorParamName);
+            a.Start = Start;
+            a.End = End;
+            ShareCloneAttributes(a);
+            ShareCloneChildren(a);
+            a.Time = time;
+            return a;
+        }
+
+#if DEBUG
+        private static volatile int nextSerial = 0;
+        private readonly int serial = nextSerial++;
+        public int getSerial () => serial;
+#endif
     }
-    */
 }
