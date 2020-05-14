@@ -10,9 +10,7 @@ Debug.Assert(context != null);
 //////////////////////////////////////////////////
 // Preprocessing stage
 
-// context["ToolTip"] indicates whether the script is running for the first time (preprocessing) or for regular rendering.
-bool preprocessing = !context.ContainsKey(PropertyName.CTX_TOOLTIP);
-if (preprocessing)
+if (Util.TryParseBool(context, PropertyName.CTX_PREPROCESSING))
 {
     context[PropertyName.CTX_TOOLTIP] = "n=<double> (index of refraction)";
 
@@ -21,9 +19,7 @@ if (preprocessing)
 
     // create animator and set form values based on keyframes
     string keyframes_file = Path.Combine(Path.GetDirectoryName((string)context[PropertyName.CTX_SCRIPT_PATH]), "AnimatorExample.yaml");
-    List<Animator.Parameter> animated_parameters = new List<Animator.Parameter>();
-    animated_parameters.AddRange(AnimatedStaticCamera.GetParams());
-    scene.Animator = new Animator(keyframes_file, animated_parameters);
+    scene.Animator = new Animator(keyframes_file);
 
     context[PropertyName.CTX_START_ANIM] = scene.Animator.Start;
     context[PropertyName.CTX_END_ANIM] = scene.Animator.End;
@@ -32,13 +28,10 @@ if (preprocessing)
     return;
 }
 
-if (scene.BackgroundColor != null)
-    // scene is already created -> will be cloned, no need to create objects again
-    return;
-
-
 //////////////////////////////////////////////////
 // CSG scene
+
+Animator a = (Animator)scene.Animator;
 
 AnimatedCSGInnerNode root = new AnimatedCSGInnerNode(SetOperation.Union);
 root.SetAttribute(PropertyName.REFLECTANCE_MODEL, new PhongModel());
@@ -55,7 +48,7 @@ scene.Sources.Add(new AmbientLightSource(0.8));
 scene.Sources.Add(new PointLightSource(new Vector3d(-5.0, 3.0, -3.0), 1.0));
 
 // Camera:
-scene.Camera = new AnimatedStaticCamera();
+scene.Camera = new KeyframesAnimatedStaticCamera(a);
 
 // --- NODE DEFINITIONS ----------------------------------------------------
 
@@ -133,3 +126,7 @@ c.SetAttribute(PropertyName.MATERIAL, pm);
 c = new Cube();
 root.InsertChild(c, Matrix4d.RotateX(0.5) * Matrix4d.CreateTranslation(5.0, 1.0, 2.0));
 c.SetAttribute(PropertyName.MATERIAL, pm);
+
+//////////////////////////////////////////////////
+// Load keyframes to animator based on parameters set during scene creation
+a.LoadKeyframes();

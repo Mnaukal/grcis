@@ -14,6 +14,7 @@ namespace DavidSosvald_MichalTopfer
     {
         private Dictionary<string, Parameter> parameters;
         private List<Keyframe> keyframes = new List<Keyframe>();
+        private string keyframesFile;
 
         private static char[] colonSeparator = {':'};
         private static char[] commaSeparator = {','};
@@ -27,14 +28,22 @@ namespace DavidSosvald_MichalTopfer
         public int getSerial () => serial;
 #endif
 
-        public Animator (string keyframesFile, IEnumerable<Parameter> parameters, int currentParamsSize)
+        public Animator (string keyframesFile, int currentParamsSize)
         {
 #if DEBUG
             Debug.WriteLine("Animator #" + getSerial() + " created.");
 #endif
 
             currentParams = new TimeAndParams[currentParamsSize];
-            this.parameters = new Dictionary<string, Parameter>();
+            parameters = new Dictionary<string, Parameter>();
+            this.keyframesFile = keyframesFile;
+            // TODO: read keyframes times and set Start and End
+        }
+
+        public Animator (string keyframesFile) : this(keyframesFile, Environment.ProcessorCount) { }
+
+        public void RegisterParams(IEnumerable<Parameter> parameters)
+        {
             foreach (var p in parameters)
             {
                 if (!this.parameters.ContainsKey(p.Name))
@@ -42,13 +51,17 @@ namespace DavidSosvald_MichalTopfer
                 else
                     Console.WriteLine("Parameter '" + p.Name + "' already exists.");
             }
+        }
+
+        public void RegisterParam (Parameter parameter) => RegisterParams(new Parameter[] { parameter });
+
+        public void LoadKeyframes()
+        {
             ReadAndSaveKeyframes(keyframesFile);
             Start = keyframes[0].Time;
             End = keyframes[keyframes.Count - 1].Time;
             Time = Start;
         }
-
-        public Animator (string keyframesFile, IEnumerable<Parameter> parameters) : this(keyframesFile, parameters, Environment.ProcessorCount) { }
 
         private void ReadAndSaveKeyframes (string fileName)
         {
@@ -364,7 +377,9 @@ namespace DavidSosvald_MichalTopfer
         }
     }
 
-    public class AnimatedStaticCamera : StaticCamera, ITimeDependent
+    public interface ITimeDependentCamera : ITimeDependent, ICamera { }
+
+    public class KeyframesAnimatedStaticCamera : StaticCamera, ITimeDependent
     {
         public double Start { get; set; }
         public double End { get; set; }
@@ -377,7 +392,21 @@ namespace DavidSosvald_MichalTopfer
             }
         }
 
-        public static IEnumerable<Animator.Parameter> GetParams (string positionParamName = "position", string directionParamName = "direction", string angleParamName = "angle")
+        private readonly string positionParamName;
+        private readonly string directionParamName;
+        private readonly string angleParamName;
+
+        public KeyframesAnimatedStaticCamera(Animator animator, string positionParamName = "position", string directionParamName = "direction", string angleParamName = "angle")
+        {
+            this.positionParamName = positionParamName;
+            this.directionParamName = directionParamName;
+            this.angleParamName = angleParamName;
+            animator.RegisterParams(GetParams());
+        }
+
+        private KeyframesAnimatedStaticCamera() { }
+
+        public IEnumerable<Animator.Parameter> GetParams ()
         {
             return new Animator.Parameter[] {
                 new Animator.Parameter(positionParamName, Animator.Parsers.ParseVector3, Animator.Interpolators.Catmull_Rom, true),
@@ -412,7 +441,7 @@ namespace DavidSosvald_MichalTopfer
 
         public object Clone ()
         {
-            AnimatedStaticCamera c = new AnimatedStaticCamera();
+            KeyframesAnimatedStaticCamera c = new KeyframesAnimatedStaticCamera();
             c.width = width;
             c.height = height;
             c.center = center;
