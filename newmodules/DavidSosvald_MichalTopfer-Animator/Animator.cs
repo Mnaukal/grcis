@@ -37,7 +37,6 @@ namespace DavidSosvald_MichalTopfer
             currentParams = new TimeAndParams[currentParamsSize];
             parameters = new Dictionary<string, Parameter>();
             this.keyframesFile = keyframesFile;
-            // TODO: read keyframes times and set Start and End
         }
 
         public Animator (string keyframesFile) : this(keyframesFile, Environment.ProcessorCount) { }
@@ -568,13 +567,15 @@ namespace DavidSosvald_MichalTopfer
                 return;
             Dictionary<string, object> p = ((Animator)MT.scene.Animator).getParams(time);
             ApplyParams(p);
+
+            base.setTime(time);
         }
 
         public void ApplyParams (Dictionary<string, object> p)
         {
             double[] color = (double[])p[colorParamName];
             IMaterial material = (IMaterial)GetAttribute(PropertyName.MATERIAL);
-            material.Color = color;
+            material.Color = (double[])color.Clone();
         }
 
         public override object Clone ()
@@ -587,11 +588,5 @@ namespace DavidSosvald_MichalTopfer
             a.Time = time;
             return a;
         }
-
-#if DEBUG
-        private static volatile int nextSerial = 0;
-        private readonly int serial = nextSerial++;
-        public int getSerial () => serial;
-#endif
     }
 }

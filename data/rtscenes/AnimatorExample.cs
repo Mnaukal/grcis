@@ -8,30 +8,19 @@ Debug.Assert(scene is ITimeDependent);
 Debug.Assert(context != null);
 
 //////////////////////////////////////////////////
-// Preprocessing stage
-
-if (Util.TryParseBool(context, PropertyName.CTX_PREPROCESSING))
-{
-    context[PropertyName.CTX_TOOLTIP] = "n=<double> (index of refraction)";
-
-    double time = 0.0;
-    bool single = Util.TryParse(context, PropertyName.CTX_TIME, ref time);
-
-    // create animator and set form values based on keyframes
-    string keyframes_file = Path.Combine(Path.GetDirectoryName((string)context[PropertyName.CTX_SCRIPT_PATH]), "AnimatorExample.yaml");
-    scene.Animator = new Animator(keyframes_file);
-
-    //context[PropertyName.CTX_START_ANIM] = scene.Animator.Start;
-    //context[PropertyName.CTX_END_ANIM] = scene.Animator.End;
-    context[PropertyName.CTX_FPS] = 25.0;
-
-    return;
-}
-
-//////////////////////////////////////////////////
 // CSG scene
 
-Animator a = (Animator)scene.Animator;
+Animator a; // 'a' is used to register params (names, parsers, interpolators) during scene creation
+if (context.ContainsKey("animator")) {
+    scene.Animator = (Animator)context["animator"];
+    a = null; // params were already registered when Animator was created (scene is the same)
+}
+else {
+    string keyframes_file = Path.Combine(Path.GetDirectoryName((string)context[PropertyName.CTX_SCRIPT_PATH]), "AnimatorExample.yaml");
+    a = new Animator(keyframes_file);
+    scene.Animator = a;
+    context["animator"] = a;
+}
 
 AnimatedCSGInnerNode root = new AnimatedCSGInnerNode(SetOperation.Union);
 root.SetAttribute(PropertyName.REFLECTANCE_MODEL, new PhongModel());
@@ -56,9 +45,9 @@ scene.Camera = new KeyframesAnimatedStaticCamera(a);
 Dictionary<string, string> p = Util.ParseKeyValueList(param);
 
 // materials
-PhongMaterial pm = new PhongMaterial(new double[] { 1.0, 0.6, 0.1 }, 0.1, 0.8, 0, 16);
-PhongMaterial r = new PhongMaterial(new double[] { 0.8, 0.1, 0.1 }, 0.1, 0.8, 0, 16);
-PhongMaterial g = new PhongMaterial(new double[] { 0.1, 1.0, 0.2 }, 0.1, 0.8, 0, 16);
+PhongMaterial pm = new PhongMaterial(new double[] { 1.0, 0.6, 0.1 }, 0.1, 0.8, 0.1, 16);
+PhongMaterial r = new PhongMaterial(new double[] { 0.8, 0.1, 0.1 }, 0.1, 0.8, 0.1, 16);
+PhongMaterial g = new PhongMaterial(new double[] { 0.1, 1.0, 0.2 }, 0.1, 0.8, 0.1, 16);
 
 // Base plane
 Plane pl = new Plane();
@@ -93,7 +82,7 @@ c.SetAttribute(PropertyName.MATERIAL, g);
 // front row
 SceneNodeMaterialAnimator front = new SceneNodeMaterialAnimator(a);
 root.InsertChild(front, Matrix4d.Identity);
-PhongMaterial m = new PhongMaterial(new double[] { 0, 0, 0 }, 0.1, 0.8, 0, 16);
+PhongMaterial m = new PhongMaterial(new double[] { 0, 0, 0 }, 0.1, 0.8, 0.1, 16);
 front.SetAttribute(PropertyName.MATERIAL, m);
 
 c = new Cube();
@@ -130,5 +119,10 @@ root.InsertChild(c, Matrix4d.RotateX(0.5) * Matrix4d.CreateTranslation(5.0, 1.0,
 c.SetAttribute(PropertyName.MATERIAL, pm);
 
 //////////////////////////////////////////////////
-// Load keyframes to animator based on parameters set during scene creation
-a.LoadKeyframes();
+// If animator was created in this run of script, load keyframes based on parameters set during scene creation
+if (a != null) {
+    a.LoadKeyframes();
+    context[PropertyName.CTX_START_ANIM] = a.Start;
+    context[PropertyName.CTX_END_ANIM] = a.End;
+    context[PropertyName.CTX_FPS] = 25.0;
+}
