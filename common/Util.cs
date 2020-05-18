@@ -1,4 +1,3 @@
-using Microsoft.CodeAnalysis.CSharp;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -276,6 +275,27 @@ namespace Utilities
       int bands = Math.Min(Math.Min(add.Length, dst.Length), weight.Length);
       for (int i = 0; i < bands; i++)
         dst[i] += weight[i] * add[i];
+    }
+
+    /// <summary>
+    /// Duplicates the color array with optional multiplication coefficient.
+    /// </summary>
+    /// <param name="src">Source array (won't be modified).</param>
+    /// <param name="coeff">Optional multiplicator.</param>
+    /// <returns>Copy of the original array.</returns>
+    public static double[] ColorClone (double[] src, double coeff = 1.0)
+    {
+      if (src == null)
+        return null;
+
+      int len = src.Length;
+      double[] result = new double[len];
+      if (coeff != 1.0)
+        ColorAdd(src, coeff, result);
+      else
+        ColorCopy(src, result);
+
+      return result;
     }
 
     /// <summary>
@@ -2178,15 +2198,54 @@ namespace Utilities
   /// </summary>
   public class ETF
   {
+    /// <summary>
+    /// Number of intermediate steps.
+    /// </summary>
+    int intermediate;
+
+    /// <summary>
+    /// Time of last check.
+    /// </summary>
     float lastTime;
+
+    /// <summary>
+    /// Intermediate lastTime values.
+    /// </summary>
+    float[] lastTimeI;
+
+    /// <summary>
+    /// Finished time computed the last time.
+    /// </summary>
     float lastFinished;
+
+    /// <summary>
+    /// Intermediate lastFinished values.
+    /// </summary>
+    float[] lastFinishedI;
+
+    /// <summary>
+    /// Total time computed from a local data (time / finished).
+    /// </summary>
     float total;
 
-    public ETF ()
+    /// <summary>
+    /// Weight of the global estimate (compared to the local estimate).
+    /// </summary>
+    float globalWeight;
+
+    /// <summary>
+    /// Copnstructor with optional settings.
+    /// </summary>
+    /// <param name="global">Weight of a global estimate (vs. a local one).</param>
+    public ETF (in float global = 0.4f, in int intermediateSteps = 2)
     {
-      lastTime = 0.0f;
-      lastFinished = 0.0f;
-      total = 0.0f;
+      intermediate = Math.Max(0, intermediateSteps);
+      lastTime      = 0.0f;
+      lastTimeI     = intermediate > 0 ? new float[intermediate] : null;
+      lastFinished  = 0.0f;
+      lastFinishedI = intermediate > 0 ? new float[intermediate] : null;
+      total         = 0.0f;
+      globalWeight  = Util.Clamp(global, 0.0f, 1.0f);
     }
 
     /// <summary>
@@ -2198,17 +2257,43 @@ namespace Utilities
     /// <returns>Total estimate</returns>
     public float Estimate (float time, float finished, out float etf)
     {
-      if (finished <= float.Epsilon)
+      if (finished <= float.Epsilon ||
+          finished >= 1.0f)
         return etf = 0.0f;
 
-      float total0 = time / finished;
+      // Globally computed total time.
+      float totalG = time / finished;
+
+      // Update locally computed quantities.
       if (total == 0.0f)
-        total = total0;
-      float total1 = (finished == lastFinished) ? total : (time - lastTime) / (finished - lastFinished);
-      total = 0.5f * (total + total1);
-      lastTime = time;
-      lastFinished = finished;
-      float tot =  total0 * 0.4f + total * 0.6f ;
+        total = totalG;
+      if (finished > lastFinished)
+      {
+        float total1 = (time - lastTime) / (finished - lastFinished);
+        total = 0.5f * (total + total1);
+      }
+
+      // Update the history.
+      if (intermediate > 0)
+      {
+        lastTime = lastTimeI[0];
+        lastFinished = lastFinishedI[0];
+        for (int i = 0; i < intermediate - 1; i++)
+        {
+          lastTimeI[i]     = lastTimeI[i + 1];
+          lastFinishedI[i] = lastFinishedI[i + 1];
+        }
+        lastTimeI[intermediate - 1]     = time;
+        lastFinishedI[intermediate - 1] = finished;
+      }
+      else
+      {
+        lastTime     = time;
+        lastFinished = finished;
+      }
+
+      // Final blend.
+      float tot =  totalG * globalWeight + total * (1.0f - globalWeight);
       etf = (1.0f - finished) * tot;
       return tot;
     }

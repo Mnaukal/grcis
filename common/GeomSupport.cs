@@ -86,6 +86,51 @@ namespace MathSupport
     }
 
     /// <summary>
+    /// Create a double[3] color array from Vector3d.
+    /// </summary>
+    public static double[] ColorCreate (in Vector3d col)
+    {
+      return new double[]
+      {
+        col.X,
+        col.Y,
+        col.Z
+      };
+    }
+
+    /// <summary>
+    /// Convert Vector4[] into Vector4d[].
+    /// </summary>
+    public static Vector4d[] Vector4dArrayFrom (in Vector4[] v4)
+    {
+      if (v4 == null)
+        return null;
+
+      int len = v4.Length;
+      Vector4d[] result = new Vector4d[len];
+      for (int i = 0; i < len; i++)
+        result[i] = (Vector4d)v4[i];
+
+      return result;
+    }
+
+    /// <summary>
+    /// Convert Vector3[] into Vector3d[].
+    /// </summary>
+    public static Vector3d[] Vector3dArrayFrom (in Vector3[] v3)
+    {
+      if (v3 == null)
+        return null;
+
+      int len = v3.Length;
+      Vector3d[] result = new Vector3d[len];
+      for (int i = 0; i < len; i++)
+        result[i] = (Vector3d)v3[i];
+
+      return result;
+    }
+
+    /// <summary>
     /// Random direction around the [0,0,1] vector.
     /// Normal distribution is used, using required variance.
     /// </summary>

@@ -232,8 +232,32 @@ namespace Rendering
   /// and 2D texture coordinates. [0,1]^3
   /// </summary>
   [Serializable]
-  public class Cube : DefaultSceneNode, ISolid
+  public class Cube : DefaultSceneNode, ISolid//, ITimeDependent
   {
+/*#if DEBUG
+        private static volatile int nextSerial = 0;
+        private readonly int serial = nextSerial++;
+        public int getSerial () => serial;
+#endif
+        public double Start { get; set; }
+        public double End { get; set; }
+        public double Time { get; set; }
+
+        public virtual object Clone ()
+        {
+            Cube n = new Cube();
+            n.Start = Start;
+            n.End = End;
+            ShareCloneAttributes(n);
+            ShareCloneChildren(n);
+            n.Time = Time;
+            return n;
+        }
+        */
+
+
+
+
     protected enum CubeFaces
     {
       PositiveX,
