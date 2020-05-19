@@ -78,13 +78,14 @@ ac.InsertChild(c, Matrix4d.Identity);
 root.InsertChild(ac, Matrix4d.Identity);
 c.SetAttribute(PropertyName.MATERIAL, g);
 
-// still cubes:
-// front row
+// still cubes
+// front row - with animated material
 AnimatedNodeMaterialColor front = new AnimatedNodeMaterialColor(a);
 root.InsertChild(front, Matrix4d.Identity);
 PhongMaterial m = new PhongMaterial(new double[] { 0, 0, 0 }, 0.1, 0.8, 0.1, 16);
 front.SetAttribute(PropertyName.MATERIAL, m);
 
+// the cubes are copied from the Cubes scene
 c = new Cube();
 front.InsertChild(c, Matrix4d.RotateY(0.6) * Matrix4d.CreateTranslation(-3.5, -0.8, 0.0));
 c = new Cube();
@@ -95,7 +96,8 @@ c = new Cube();
 front.InsertChild(c, Matrix4d.RotateY(2.4) * Matrix4d.CreateTranslation(2.5, -0.8, 0.0));
 c = new Cube();
 front.InsertChild(c, Matrix4d.RotateY(3.0) * Matrix4d.CreateTranslation(4.5, -0.8, 0.0));
-// back row:
+
+// back row - not animated
 c = new Cube();
 root.InsertChild(c, Matrix4d.RotateX(3.5) * Matrix4d.CreateTranslation(-4.0, 1.0, 2.0));
 c.SetAttribute(PropertyName.MATERIAL, pm);
