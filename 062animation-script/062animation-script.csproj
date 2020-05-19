@@ -177,6 +177,7 @@
     <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-Animator\Animator.cs">
       <Link>rt_extensions\Animator.cs</Link>
     </Compile>
+    <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-Animator\KeyframesAnimatedStaticCamera.cs" />
     <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-DoFCamera\KeyframesAnimatedDoFCamera.cs">
       <Link>rt_extensions\KeyframesAnimatedDoFCamera.cs</Link>
     </Compile>
