@@ -13,7 +13,7 @@
 ### Source file: ChaoticParticles.cs
 
 This extension implements a new "Solid" -- container for a **set of spherical** (possibly glowing)
-**particles** which can be animated using a ``PropertyAnimator``.
+**particles** which can be animated using a ``ITimeDependentProperty``.
 
 There are **two optional properties** which can control the set of particles. Two properties
 can be defined independently:
@@ -33,4 +33,4 @@ more modules: ``StarBackground.cs`` and ``CatmullRomAnimator.cs``.
 
 Videosequence:
 
-[YouTube video 640x360]()
+[YouTube video 640x360](https://youtu.be/6UPf2p8KwdI)
