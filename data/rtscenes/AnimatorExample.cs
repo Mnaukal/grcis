@@ -57,30 +57,30 @@ root.InsertChild(pl, Matrix4d.RotateX(-MathHelper.PiOver2) * Matrix4d.CreateTran
 
 // Cubes
 Cube c;
-SceneNodeTransformAnimator ac;
+AnimatedNodeTransform ac;
 
 // animated cubes
 c = new Cube();
-ac = new SceneNodeTransformAnimator(a, "t1", null, "s1");
+ac = new AnimatedNodeTransform(a, "t1", null, "s1");
 ac.InsertChild(c, Matrix4d.Identity);
 root.InsertChild(ac, Matrix4d.Identity);
 c.SetAttribute(PropertyName.MATERIAL, r);
 
 c = new Cube();
-ac = new SceneNodeTransformAnimator(a, null, "r1", null, new Vector3d(-5, -0.5, 0));
+ac = new AnimatedNodeTransform(a, null, "r1", null, new Vector3d(-5, -0.5, 0));
 ac.InsertChild(c, Matrix4d.Identity);
 root.InsertChild(ac, Matrix4d.Identity);
 c.SetAttribute(PropertyName.MATERIAL, g);
 
 c = new Cube();
-ac = new SceneNodeTransformAnimator(a, null, "r1", null, new Vector3d(6, -0.5, 0));
+ac = new AnimatedNodeTransform(a, null, "r1", null, new Vector3d(6, -0.5, 0));
 ac.InsertChild(c, Matrix4d.Identity);
 root.InsertChild(ac, Matrix4d.Identity);
 c.SetAttribute(PropertyName.MATERIAL, g);
 
 // still cubes:
 // front row
-SceneNodeMaterialAnimator front = new SceneNodeMaterialAnimator(a);
+AnimatedNodeMaterialColor front = new AnimatedNodeMaterialColor(a);
 root.InsertChild(front, Matrix4d.Identity);
 PhongMaterial m = new PhongMaterial(new double[] { 0, 0, 0 }, 0.1, 0.8, 0.1, 16);
 front.SetAttribute(PropertyName.MATERIAL, m);

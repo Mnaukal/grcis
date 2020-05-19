@@ -170,8 +170,12 @@
     <Compile Include="..\common\RayTracingRender.cs">
       <Link>RayTracingRender.cs</Link>
     </Compile>
+    <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-Animator\AnimatedNodeMaterialColor.cs" />
+    <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-Animator\AnimatedNodeTransform.cs">
+      <Link>rt_extensions\AnimatedNodeTransform.cs</Link>
+    </Compile>
     <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-Animator\Animator.cs">
-      <Link>rt_extensions\AnimatedCamera.cs</Link>
+      <Link>rt_extensions\Animator.cs</Link>
     </Compile>
     <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-DoFCamera\KeyframesAnimatedDoFCamera.cs">
       <Link>rt_extensions\KeyframesAnimatedDoFCamera.cs</Link>
