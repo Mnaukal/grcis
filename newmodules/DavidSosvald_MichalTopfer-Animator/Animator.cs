@@ -10,7 +10,7 @@ using System.Diagnostics;
 
 namespace DavidSosvald_MichalTopfer
 {
-    public class Animator : ITimeDependent
+    public class Animator : ITimeDependent, ITimeDependentProperty
     {
         private Dictionary<string, Parameter> parameters;
         private List<Keyframe> keyframes = new List<Keyframe>();
@@ -39,7 +39,7 @@ namespace DavidSosvald_MichalTopfer
             this.keyframesFile = keyframesFile;
         }
 
-        public Animator (string keyframesFile) : this(keyframesFile, Environment.ProcessorCount) { }
+        public Animator (string keyframesFile) : this(keyframesFile, 1) { }
 
         public void RegisterParams(IEnumerable<Parameter> parameters)
         {
@@ -153,8 +153,15 @@ namespace DavidSosvald_MichalTopfer
         private double time;
 
         public object Clone ()
-        { 
-            return this;
+        {
+            Animator clone = new Animator(this.keyframesFile);
+            clone.parameters = this.parameters;
+            clone.keyframes = this.keyframes;
+            clone.currentParamsIndex = this.currentParamsIndex;
+            clone.Start = this.Start;
+            clone.End = this.End;
+            clone.time = this.time;
+            return clone;
         }
 
         private Dictionary<string, object> InterpolateKeyframes(double time)
@@ -210,7 +217,125 @@ namespace DavidSosvald_MichalTopfer
             return currentParams.FirstOrDefault(x => x.T == time).P ?? InterpolateKeyframes(time);
         }
 
-        private class Keyframe
+    #region ITimeDependentProperty methods implementation
+    public object GetValue (in string name)
+    {
+      try
+      {
+        return getParam(name, Time);
+      }
+      catch
+      {
+        return null;
+      }
+    }
+
+    public bool TryGetValue (in string name, ref float f)
+    {
+      try
+      {
+        f = (float)getParam(name, Time);
+        return true;
+      }
+      catch
+      {
+        return false;
+      }
+    }
+
+    public bool TryGetValue (in string name, ref double d)
+    {
+      try
+      {
+        d = (double)getParam(name, Time);
+        return true;
+      }
+      catch
+      {
+        return false;
+      }
+    }
+
+    public bool TryGetValue (in string name, ref Vector3 v3)
+    {
+      try
+      {
+        v3 = (Vector3)getParam(name, Time);
+        return true;
+      }
+      catch
+      {
+        return false;
+      }
+    }
+
+    public bool TryGetValue (in string name, ref Vector4 v4)
+    {
+      try
+      {
+        v4 = (Vector4)getParam(name, Time);
+        return true;
+      }
+      catch
+      {
+        return false;
+      }
+    }
+
+    public bool TryGetValue (in string name, ref Vector3d v3)
+    {
+      try
+      {
+        v3 = (Vector3d)getParam(name, Time);
+        return true;
+      }
+      catch
+      {
+        return false;
+      }
+    }
+
+    public bool TryGetValue (in string name, ref Vector4d v4)
+    {
+      try
+      {
+        v4 = (Vector4d)getParam(name, Time);
+        return true;
+      }
+      catch
+      {
+        return false;
+      }
+    }
+
+    public bool TryGetValue (in string name, ref Quaterniond q)
+    {
+      try
+      {
+        q = (Quaterniond)getParam(name, Time);
+        return true;
+      }
+      catch
+      {
+        return false;
+      }
+    }
+
+    public bool TryGetValue (in string name, ref Matrix4d m4)
+    {
+      try
+      {
+        m4 = (Matrix4d)getParam(name, Time);
+        return true;
+      }
+      catch
+      {
+        return false;
+      }
+    }
+    #endregion
+
+    private class Keyframe
         {
             public readonly double Time;
             public readonly Dictionary<string, object> parameters;
