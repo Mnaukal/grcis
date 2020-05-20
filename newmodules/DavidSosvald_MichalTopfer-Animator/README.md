@@ -49,13 +49,17 @@ Parameter (string name, Parser parser, Interpolator interpolator, bool required 
 
 After registering all parameters, the keyframes must be loaded from file using the `LoadKeyframes` method.
 
+## Script file
+
+When creating a new `Animator`, you need to provide a path to your script file. We support script files in YAML format. For each keyframe, you must first specify its time, and the provide the values of parameters. For required parameters, a value must be specified in every keyframe, else an exception is thrown. Lines that begin with a "#" will be ignored. You can see an example script file in `AnimatorExample.yaml`.
+
 ## Example
 
 The example scene script can be found in file `AnimatorExample.cs` (with keyframes in `AnimatorExample.yaml`).
 
 ## Images, videos
 
-**TODO**
+https://youtu.be/2ri3-RG7Zgc
 
 # Extension: KeyframeAnimatedStaticCamera
 
