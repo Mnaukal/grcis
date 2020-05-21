@@ -17,7 +17,7 @@ namespace DavidSosvald_MichalTopfer
 
         public KeyframesAnimatedDoFCamera (Animator animator, string positionParamName = "position", string directionParamName = "direction", string angleParamName = "angle", string focusParamName = "focus", string focusPointParamName = "focus_point", string maxShiftParamName = "max_shift") : this(positionParamName, directionParamName, angleParamName, focusParamName, focusPointParamName, maxShiftParamName)
         {
-            animator.RegisterParams(GetParams());
+            animator?.RegisterParams(GetParams());
         }
 
         private KeyframesAnimatedDoFCamera (string positionParamName, string directionParamName, string angleParamName, string focusParamName, string focusPointParamName, string maxShiftParamName)

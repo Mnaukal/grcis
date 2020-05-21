@@ -5,6 +5,10 @@ using DavidSosvald_MichalTopfer;
 if (context != null)
 {
     context["Algorithm"] = new RayTracing(scene);
+    context[PropertyName.CTX_TOOLTIP] = "focus=<double> (focus distance), shift=<double> (max shift of the origin of the ray)";
+
+    if (context.ContainsKey(PropertyName.CTX_SUPERSAMPLING) && (int) context[PropertyName.CTX_SUPERSAMPLING] <= 4)
+        context[PropertyName.CTX_SUPERSAMPLING] = 16;
 }
 
 // Params dictionary:

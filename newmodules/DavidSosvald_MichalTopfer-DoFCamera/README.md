@@ -53,7 +53,7 @@ The rest of arguments of the constructor control the amount of blur and type of 
 
 ## Example
 
-**TODO**
+An example static scene script can be found in file `DoFTest.cs` (copy of the Cubes scene with `DoFCamera`). An example animated scene script can be found in file `DoFExample.cs` (with keyframes in `DoFExample.yaml`).
 
 ## KeyframesAnimatedDoFCamera
 
