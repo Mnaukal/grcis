@@ -119,7 +119,13 @@ namespace DavidSosvald_MichalTopfer
     public interface IVertigoInnerCamera : ITimeDependent, ICamera
     {
         Vector3d GetPosition ();
+        /// <summary>
+        /// Returns current viewing angle of the camera in radians
+        /// </summary>
         double GetAngle ();
+        /// <summary>
+        /// Sets the viewing angle of the camera (in radians)
+        /// </summary>
         void SetAngle (double angle);
         Vector3d GetDirection ();
         void SetDirection (Vector3d direction);

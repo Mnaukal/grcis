@@ -5,8 +5,8 @@ using System.Collections.Generic;
 
 namespace DavidSosvald_MichalTopfer
 {
-    public class KeyframesAnimatedDoFCamera : DoFCamera, ITimeDependent,
-        IVertigoInnerCamera // delete this line if you don't use the VertigoEffectCamera extension
+    public class KeyframesAnimatedDoFCamera : DoFCamera, ITimeDependent
+        //, IVertigoInnerCamera // uncomment to use with the VertigoEffectCamera extension
     {
         private readonly string positionParamName;
         private readonly string directionParamName;

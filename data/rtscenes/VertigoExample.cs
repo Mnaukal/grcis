@@ -6,13 +6,17 @@ Debug.Assert(scene != null);
 Debug.Assert(scene is ITimeDependent);
 Debug.Assert(context != null);
 
-// create animator and set form values based on keyframes
-string keyframes_file = Path.Combine(Path.GetDirectoryName((string)context[PropertyName.CTX_SCRIPT_PATH]), "VertigoExample.yaml");
-Animator a = new Animator(keyframes_file);
-scene.Animator = a;
-//context[PropertyName.CTX_START_ANIM] = a.Start;
-//context[PropertyName.CTX_END_ANIM] = a.End;
-context[PropertyName.CTX_FPS] = 25.0;
+Animator a; // 'a' is used to register params (names, parsers, interpolators) during scene creation
+if (context.ContainsKey("animator")) {
+    scene.Animator = (ITimeDependent)((Animator) context["animator"]).Clone();
+    a = null; // params were already registered when Animator was created (scene is the same)
+}
+else {
+    string keyframes_file = Path.Combine(Path.GetDirectoryName((string)context[PropertyName.CTX_SCRIPT_PATH]), "VertigoExample.yaml");
+    a = new Animator(keyframes_file);
+    scene.Animator = a;
+    context["animator"] = a;
+}
 
 // CSG scene:
 CSGInnerNode root = new CSGInnerNode(SetOperation.Union);
@@ -76,5 +80,10 @@ sphere = new Sphere();
 sphere.SetAttribute(PropertyName.MATERIAL, yellow);
 root.InsertChild(sphere, Matrix4d.Scale(3) * Matrix4d.CreateTranslation(3, 3, 4));
 
-// Load keyframes to animator based on parameters set during scene creation
-a.LoadKeyframes();
+// If animator was created in this run of script, load keyframes based on parameters set during scene creation
+if (a != null) {
+    a.LoadKeyframes();
+    context[PropertyName.CTX_START_ANIM] = a.Start;
+    context[PropertyName.CTX_END_ANIM] = a.End;
+    context[PropertyName.CTX_FPS] = 25.0;
+}

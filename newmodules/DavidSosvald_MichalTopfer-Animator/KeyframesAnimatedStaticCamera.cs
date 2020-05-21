@@ -5,8 +5,8 @@ using Rendering;
 
 namespace DavidSosvald_MichalTopfer
 {
-    public class KeyframesAnimatedStaticCamera : StaticCamera, ITimeDependent,
-        IVertigoInnerCamera // delete this line if you don't use the VertigoEffectCamera extension
+    public class KeyframesAnimatedStaticCamera : StaticCamera, ITimeDependent
+        //, IVertigoInnerCamera // uncomment to use with the VertigoEffectCamera extension
     {
         public double Start { get; set; }
         public double End { get; set; }
