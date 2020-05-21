@@ -1,8 +1,8 @@
 # RayTracer extensions:
 
-* **Animated Camera**: https://github.com/Mnaukal/grcis/tree/master/common/rt_extensions/AnimatedCamera
-* **Depth-Of-Field Camera**: https://github.com/Mnaukal/grcis/tree/master/common/rt_extensions/DoFCamera
-* **Vertigo Effect Camera**: https://github.com/Mnaukal/grcis/tree/master/common/rt_extensions/VertigoEffectCamera
+* **Animator (Animated Camera, Animated nodes)**: https://github.com/Mnaukal/grcis/tree/summer2019-2020/newmodules/DavidSosvald_MichalTopfer-Animator
+* **Depth-Of-Field Camera**: https://github.com/Mnaukal/grcis/tree/summer2019-2020/newmodules/DavidSosvald_MichalTopfer-DoFCamera
+* **Vertigo Effect Camera**: https://github.com/Mnaukal/grcis/tree/summer2019-2020/newmodules/DavidSosvald_MichalTopfer-VertigoEffectCamera
 
 ---
 
