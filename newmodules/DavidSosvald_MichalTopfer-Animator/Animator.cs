@@ -217,6 +217,22 @@ namespace DavidSosvald_MichalTopfer
             return currentParams.FirstOrDefault(x => x.T == time).P ?? InterpolateKeyframes(time);
         }
 
+        /// <summary>
+        /// Returns the current value of 'paramName' (based on the value of the Time property)
+        /// </summary>
+        public object getParam (string paramName)
+        {
+            return getParam(paramName, Time);
+        }
+
+        /// <summary>
+        /// Returns the current dictionary of parameters (based on the value of the Time property)
+        /// </summary>
+        public Dictionary<string, object> getParams ()
+        {
+            return getParams(Time);
+        }
+
     #region ITimeDependentProperty methods implementation
     public object GetValue (in string name)
     {

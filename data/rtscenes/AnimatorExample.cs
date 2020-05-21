@@ -12,7 +12,7 @@ Debug.Assert(context != null);
 
 Animator a; // 'a' is used to register params (names, parsers, interpolators) during scene creation
 if (context.ContainsKey("animator")) {
-    scene.Animator = (Animator)context["animator"];
+    scene.Animator = (ITimeDependent)((Animator)context["animator"]).Clone();
     a = null; // params were already registered when Animator was created (scene is the same)
 }
 else {
