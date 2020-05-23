@@ -10,18 +10,19 @@ namespace DavidSosvald_MichalTopfer
         private readonly string positionParamName;
         private readonly string directionParamName;
         private readonly ICamera innerCamera;
-        Vector3d originalPosition, originalDirection, up;
+        Vector3d originalPosition, originalDirection, up = Vector3d.Zero;
         Matrix4d positionUpdate, directionUpdate;
 
-        public CameraProxy (Animator animator, ICamera innerCamera, string positionParamName = "position", string directionParamName = "direction") : this(innerCamera, positionParamName, directionParamName)
+        public CameraProxy (ICamera innerCamera, Vector3d up, Animator animator = null, string positionParamName = "position", string directionParamName = "direction") : this(innerCamera, animator, positionParamName, directionParamName)
         {
-            animator?.RegisterParams(GetParams());
+            this.up = up;
         }
 
-        private CameraProxy (ICamera innerCamera, string positionParamName, string directionParamName)
+        public CameraProxy (ICamera innerCamera, Animator animator = null, string positionParamName = "position", string directionParamName = "direction")
         {
             this.positionParamName = positionParamName;
             this.directionParamName = directionParamName;
+            animator?.RegisterParams(GetParams());
             this.innerCamera = innerCamera;
             Initialize();
         }
@@ -37,9 +38,13 @@ namespace DavidSosvald_MichalTopfer
         public void Initialize()
         {
             innerCamera.GetRay(Width / 2, Height / 2, out originalPosition, out originalDirection);
-            innerCamera.GetRay(Width / 2, 0, out Vector3d top_p0, out Vector3d top_p1);
-            innerCamera.GetRay(Width / 2, Height, out Vector3d bot_p0, out Vector3d bot_p1);
-            up = (top_p0 + top_p1) - (bot_p0 + bot_p1);
+            if (up == Vector3d.Zero)
+            {
+                innerCamera.GetRay(Width / 2, 0, out Vector3d top_p0, out Vector3d top_p1);
+                innerCamera.GetRay(Width / 2, Height, out Vector3d bot_p0, out Vector3d bot_p1);
+                up = (top_p0 + top_p1) - (bot_p0 + bot_p1);
+            }
+            up.Normalize();
         }
 
         public double Start { get; set; }
@@ -73,10 +78,36 @@ namespace DavidSosvald_MichalTopfer
             Vector3d direction = (Vector3d)p[directionParamName];
 
             positionUpdate = Matrix4d.CreateTranslation(position - originalPosition);
-            Vector3d axis = Vector3d.Cross(originalDirection, direction);
-            double angle = Vector3d.CalculateAngle(originalDirection, direction);
-            directionUpdate = Matrix4d.CreateFromAxisAngle(axis, angle);
+
+            /* up_plane = plane with 'up' as normal
+             * the rotation is composed of 3 parts:
+             *   1. pitch1 = rotate the 'originalDirection' to the up_plane
+             *   2. yaw = rotation in the up_plane
+             *   3. pitch2 = rotate from the up_plane to the 'direction'
+             */
+
+            Vector3d originalDirection_up_plane = originalDirection - VectorProjection(originalDirection, up);
+            Vector3d direction_up_plane = direction - VectorProjection(direction, up);
+
+            double pitch1 = Vector3d.CalculateAngle(originalDirection_up_plane, originalDirection);
+            Vector3d pitch1_axis = Vector3d.Cross(originalDirection_up_plane, originalDirection);
+            Matrix4d pitch1_rotation = pitch1 > 0 ?
+                Matrix4d.CreateFromAxisAngle(pitch1_axis, pitch1) :
+                Matrix4d.Identity;
+
+            double yaw = Vector3d.CalculateAngle(originalDirection_up_plane, direction_up_plane);
+            Matrix4d yaw_rotation = Matrix4d.CreateFromAxisAngle(up, yaw);
+
+            double pitch2 = Vector3d.CalculateAngle(direction_up_plane, direction);
+            Vector3d pitch2_axis = Vector3d.Cross(direction_up_plane, direction);
+            Matrix4d pitch2_rotation = pitch2 > 0 ?
+                Matrix4d.CreateFromAxisAngle(pitch2_axis, pitch2) :
+                Matrix4d.Identity;
+
+            directionUpdate = pitch1_rotation * yaw_rotation * pitch2_rotation;
         }
+
+        private Vector3d VectorProjection (Vector3d vec, Vector3d onto) => Vector3d.Dot(vec, onto) * onto / onto.Length;
 
         public object Clone ()
         {

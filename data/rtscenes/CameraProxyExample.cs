@@ -38,9 +38,9 @@ scene.Sources.Add(new PointLightSource(new Vector3d(-5.0, 3.0, -3.0), 1.0));
 
 // Camera:
 StaticCamera staticCamera = new StaticCamera(new Vector3d(0.7, 3.0, -10.0),
-                                             new Vector3d(0.0, -0.3, 1.0),
+                                             new Vector3d(0.0, 0, 1.0),
                                              50.0);
-scene.Camera = new CameraProxy(a, staticCamera);
+scene.Camera = new CameraProxy(staticCamera, a);
 
 // --- NODE DEFINITIONS ----------------------------------------------------
 
