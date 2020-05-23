@@ -170,16 +170,20 @@
     <Compile Include="..\common\RayTracingRender.cs">
       <Link>RayTracingRender.cs</Link>
     </Compile>
-    <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-Animator\AnimatedNodeMaterialColor.cs" />
+    <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-Animator\AnimatedNodeMaterialColor.cs" >
+      <Link>rt_extensions\AnimatedNodeMaterialColor.cs</Link>
+    </Compile>
     <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-Animator\AnimatedNodeTransform.cs">
       <Link>rt_extensions\AnimatedNodeTransform.cs</Link>
     </Compile>
     <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-Animator\Animator.cs">
       <Link>rt_extensions\Animator.cs</Link>
     </Compile>
-    <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-Animator\KeyframesAnimatedStaticCamera.cs" />
-    <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-DoFCamera\KeyframesAnimatedDoFCamera.cs">
-      <Link>rt_extensions\KeyframesAnimatedDoFCamera.cs</Link>
+    <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-Animator\KeyframesAnimatedStaticCamera.cs" >
+      <Link>rt_extensions\KeyframesAnimatedStaticCamera.cs</Link>
+    </Compile>
+    <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-CameraProxy\CameraProxy.cs" >
+      <Link>rt_extensions\CameraProxy.cs</Link>
     </Compile>
     <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-DoFCamera\DoFCamera.cs">
       <Link>rt_extensions\DoFCamera.cs</Link>

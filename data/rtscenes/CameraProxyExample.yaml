@@ -1,0 +1,9 @@
+0:
+    position: -10, 0, 0
+    direction: 1, 0, 0
+5:
+    position: -10, 0, -10
+    direction: 1, 0.1, 1.1
+10:
+    position: -8, 10, -6
+    direction: 1, -1, 1
