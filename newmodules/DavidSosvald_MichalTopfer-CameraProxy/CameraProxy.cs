@@ -2,6 +2,7 @@
 using Rendering;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace DavidSosvald_MichalTopfer
 {
@@ -68,14 +69,19 @@ namespace DavidSosvald_MichalTopfer
         {
             if (MT.scene == null)
                 return;
-            Dictionary<string, object> p = ((Animator)MT.scene.Animator).getParams(time);
-            ApplyParams(p);
+            ApplyParams((ITimeDependentProperty)MT.scene.Animator);
         }
 
-        void ApplyParams (Dictionary<string, object> p)
+        void ApplyParams (ITimeDependentProperty tdp)
         {
-            Vector3d position = (Vector3d)p[positionParamName];
-            Vector3d direction = (Vector3d)p[directionParamName];
+            Vector3d position = originalPosition, direction = originalDirection;
+            if (!tdp.TryGetValue(positionParamName, ref position) ||
+                !tdp.TryGetValue(directionParamName, ref direction))
+            {
+#if DEBUG
+                Debug.WriteLine($"Position or direction not specified in CameraProxy #{getSerial()} at time {Time}");
+#endif
+            }
 
             positionUpdate = Matrix4d.CreateTranslation(position - originalPosition);
 
