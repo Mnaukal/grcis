@@ -16,7 +16,7 @@ if (context.ContainsKey("animator")) {
     a = null; // params were already registered when Animator was created (scene is the same)
 }
 else {
-    string keyframes_file = Path.Combine(Path.GetDirectoryName((string)context[PropertyName.CTX_SCRIPT_PATH]), "CameraProxyExample.yaml");
+    string keyframes_file = Path.Combine(Path.GetDirectoryName((string)context[PropertyName.CTX_SCRIPT_PATH]), "CameraAnimationProxyExample.yaml");
     a = new Animator(keyframes_file);
     scene.Animator = a;
     context["animator"] = a;
@@ -40,7 +40,7 @@ scene.Sources.Add(new PointLightSource(new Vector3d(-5.0, 3.0, -3.0), 1.0));
 StaticCamera staticCamera = new StaticCamera(new Vector3d(0.7, 3.0, -10.0),
                                              new Vector3d(0.0, 0, 1.0),
                                              50.0);
-scene.Camera = new CameraProxy(staticCamera, a);
+scene.Camera = new CameraAnimationProxy(staticCamera, a);
 
 // --- NODE DEFINITIONS ----------------------------------------------------
 

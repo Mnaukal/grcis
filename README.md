@@ -3,6 +3,7 @@
 * **Animator (Animated Camera, Animated nodes)**: https://github.com/Mnaukal/grcis/tree/summer2019-2020/newmodules/DavidSosvald_MichalTopfer-Animator
 * **Depth-Of-Field Camera**: https://github.com/Mnaukal/grcis/tree/summer2019-2020/newmodules/DavidSosvald_MichalTopfer-DoFCamera
 * **Vertigo Effect Camera**: https://github.com/Mnaukal/grcis/tree/summer2019-2020/newmodules/DavidSosvald_MichalTopfer-VertigoEffectCamera
+* **Camera Animation Proxy**: https://github.com/Mnaukal/grcis/tree/summer2019-2020/newmodules/DavidSosvald_MichalTopfer-CameraAnimationProxy
 
 ---
 

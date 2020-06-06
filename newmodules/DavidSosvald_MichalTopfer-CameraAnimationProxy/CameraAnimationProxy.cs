@@ -6,7 +6,7 @@ using System.Diagnostics;
 
 namespace DavidSosvald_MichalTopfer
 {
-    public class CameraProxy : ICamera, ITimeDependent
+    public class CameraAnimationProxy : ICamera, ITimeDependent
     {
         private readonly string positionParamName;
         private readonly string directionParamName;
@@ -14,12 +14,12 @@ namespace DavidSosvald_MichalTopfer
         Vector3d originalPosition, originalDirection, up = Vector3d.Zero;
         Matrix4d positionUpdate, directionUpdate;
 
-        public CameraProxy (ICamera innerCamera, Vector3d up, Animator animator = null, string positionParamName = "position", string directionParamName = "direction") : this(innerCamera, animator, positionParamName, directionParamName)
+        public CameraAnimationProxy (ICamera innerCamera, Vector3d up, Animator animator = null, string positionParamName = "position", string directionParamName = "direction") : this(innerCamera, animator, positionParamName, directionParamName)
         {
             this.up = up;
         }
 
-        public CameraProxy (ICamera innerCamera, Animator animator = null, string positionParamName = "position", string directionParamName = "direction")
+        public CameraAnimationProxy (ICamera innerCamera, Animator animator = null, string positionParamName = "position", string directionParamName = "direction")
         {
             this.positionParamName = positionParamName;
             this.directionParamName = directionParamName;
@@ -69,6 +69,8 @@ namespace DavidSosvald_MichalTopfer
         {
             if (MT.scene == null)
                 return;
+            if (innerCamera is ITimeDependent c)
+                c.Time = time;
             ApplyParams((ITimeDependentProperty)MT.scene.Animator);
         }
 
@@ -124,6 +126,7 @@ namespace DavidSosvald_MichalTopfer
         private static volatile int nextSerial = 0;
         private readonly int serial = nextSerial++;
         public int getSerial () => serial;
+#endif
 
         public bool GetRay (double x, double y, out Vector3d p0, out Vector3d p1)
         {
@@ -135,6 +138,5 @@ namespace DavidSosvald_MichalTopfer
             }
             return false;
         }
-#endif
     }
 }

@@ -182,8 +182,8 @@
     <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-Animator\KeyframesAnimatedStaticCamera.cs" >
       <Link>rt_extensions\KeyframesAnimatedStaticCamera.cs</Link>
     </Compile>
-    <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-CameraProxy\CameraProxy.cs" >
-      <Link>rt_extensions\CameraProxy.cs</Link>
+    <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-CameraAnimationProxy\CameraAnimationProxy.cs" >
+      <Link>rt_extensions\CameraAnimationProxy.cs</Link>
     </Compile>
     <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-DoFCamera\DoFCamera.cs">
       <Link>rt_extensions\DoFCamera.cs</Link>
