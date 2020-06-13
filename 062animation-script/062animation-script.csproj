@@ -170,7 +170,7 @@
     <Compile Include="..\common\RayTracingRender.cs">
       <Link>RayTracingRender.cs</Link>
     </Compile>
-    <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-Animator\AnimatedNodeMaterialColor.cs" >
+    <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-Animator\AnimatedNodeMaterialColor.cs">
       <Link>rt_extensions\AnimatedNodeMaterialColor.cs</Link>
     </Compile>
     <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-Animator\AnimatedNodeTransform.cs">
@@ -179,14 +179,17 @@
     <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-Animator\Animator.cs">
       <Link>rt_extensions\Animator.cs</Link>
     </Compile>
-    <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-Animator\KeyframesAnimatedStaticCamera.cs" >
+    <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-Animator\KeyframesAnimatedStaticCamera.cs">
       <Link>rt_extensions\KeyframesAnimatedStaticCamera.cs</Link>
     </Compile>
-    <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-CameraAnimationProxy\CameraAnimationProxy.cs" >
+    <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-CameraAnimationProxy\CameraAnimationProxy.cs">
       <Link>rt_extensions\CameraAnimationProxy.cs</Link>
     </Compile>
     <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-DoFCamera\DoFCamera.cs">
       <Link>rt_extensions\DoFCamera.cs</Link>
+    </Compile>
+    <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-DoFCamera\KeyframesAnimatedDoFCamera.cs">
+      <Link>rt_extensions\KeyframesAnimatedDoFCamera.cs</Link>
     </Compile>
     <Compile Include="..\newmodules\DavidSosvald_MichalTopfer-VertigoEffectCamera\VertigoEffectCamera.cs">
       <Link>rt_extensions\VertigoEffectCamera.cs</Link>
@@ -202,6 +205,9 @@
     </Compile>
     <Compile Include="..\common\WorkloadDistributionDummy.cs">
       <Link>WorkloadDistributionDummy.cs</Link>
+    </Compile>
+    <Compile Include="..\newmodules\JosefPelikan-StarBackground\StarBackground.cs">
+      <Link>rt_extensions\StarBackground.cs</Link>
     </Compile>
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>

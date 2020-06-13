@@ -14,12 +14,12 @@ Debug.Assert(context != null);
 Animator a; // 'a' is used to register params (names, parsers, interpolators) during scene creation
 if (context.ContainsKey("animator")) {
     scene.Animator = (ITimeDependent) ((Animator) context["animator"]).Clone();
-a = null; // params were already registered when Animator was created (scene is the same)
+    a = null; // params were already registered when Animator was created (scene is the same)
 }
 else {
     string keyframes_file = Path.Combine(Path.GetDirectoryName((string)context[PropertyName.CTX_SCRIPT_PATH]), "animation.yaml");
-a = new Animator(keyframes_file);
-scene.Animator = a;
+    a = new Animator(keyframes_file);
+    scene.Animator = a;
     context["animator"] = a;
 }
 
@@ -35,10 +35,10 @@ scene.Background = new StarBackground(scene.BackgroundColor, 1000, 0.02, 0.5, 4.
 // Light sources:
 scene.Sources = new LinkedList<ILightSource>();
 scene.Sources.Add(new AmbientLightSource(0.8));
-scene.Sources.Add(new PointLightSource(new Vector3d(-5.0, 3.0, -3.0), 1.0));
+scene.Sources.Add(new PointLightSource(new Vector3d(-5.0, 0.0, 0.0), 1.0));
 
 // Camera:
-scene.Camera = new KeyframesAnimatedStaticCamera(a);
+scene.Camera = new KeyframesAnimatedDoFCamera(a);
 
 // --- NODE DEFINITIONS ----------------------------------------------------
 
@@ -46,9 +46,27 @@ scene.Camera = new KeyframesAnimatedStaticCamera(a);
 Dictionary<string, string> p = Util.ParseKeyValueList(param);
 
 // materials
-PhongMaterial pm = new PhongMaterial(new double[] { 1.0, 0.6, 0.1 }, 0.1, 0.8, 0.1, 16);
-PhongMaterial r = new PhongMaterial(new double[] { 0.8, 0.1, 0.1 }, 0.1, 0.8, 0.1, 16);
-PhongMaterial g = new PhongMaterial(new double[] { 0.1, 1.0, 0.2 }, 0.1, 0.8, 0.1, 16);
+var red = new double[] { 0.8, 0.1, 0.1 };
+var green = new double[] { 0.1, 1.0, 0.2 };
+var yellow = new double[] { 0.9, 0.7, 0.1 };
+
+PhongMaterial r = new PhongMaterial(red, 0.1, 0.8, 0.1, 16);
+PhongMaterial g = new PhongMaterial(green, 0.1, 0.8, 0.1, 16);
+PhongMaterial y = new PhongMaterial(yellow, 0.1, 0.8, 0.1, 16);
+
+private PhongMaterial GetMaterial(int j)
+{
+    switch (j % 3)
+    {
+        case 0:
+            return r;
+        case 1:
+            return g;
+        case 2:
+            return y;
+    }
+    return null;
+}
 
 // Base plane
 //Plane pl = new Plane();
@@ -57,37 +75,24 @@ PhongMaterial g = new PhongMaterial(new double[] { 0.1, 1.0, 0.2 }, 0.1, 0.8, 0.
 //root.InsertChild(pl, Matrix4d.RotateX(-MathHelper.PiOver2) * Matrix4d.CreateTranslation(0.0, -1.0, 0.0));
 
 // Cubes
-for (int i = 10; i<=20; i+=10)
-	{
-Cube c;
-AnimatedNodeTransform ac = new AnimatedNodeTransform(a, null, "r1", null, new Vector3d(i, 5.0, 0.0));
+for (int i = 0; i < 5; i += 1)
+{
+    Cube c;
+    AnimatedNodeTransform ac = new AnimatedNodeTransform(a, "p" + i, "r1", "s1");
 
-c = new Cube();
-ac.InsertChild(c, Matrix4d.CreateTranslation(0.0, 0.0, -4.0));
-c.SetAttribute(PropertyName.MATERIAL, r);
+    int CUBES = 9;
+    double angle = Math.PI * 2 / CUBES;
 
-c = new Cube();
-ac.InsertChild(c, Matrix4d.CreateTranslation(0.0, 0.0, 4.0));
-c.SetAttribute(PropertyName.MATERIAL, g);
+    
+    for (int j = 0; j <= CUBES; j += 1)
+    {
+        c = new Cube();
+        ac.InsertChild(c, Matrix4d.CreateTranslation(0.0, 0.0, -4.0) * Matrix4d.CreateRotationX(angle * j));
+        c.SetAttribute(PropertyName.MATERIAL, GetMaterial(j));
+    }
 
-c = new Cube();
-ac.InsertChild(c, Matrix4d.CreateTranslation(0.0, 3.0, -2.0));
-c.SetAttribute(PropertyName.MATERIAL, g);
-
-c = new Cube();
-ac.InsertChild(c, Matrix4d.CreateTranslation(0.0, 3.0, 2.0));
-c.SetAttribute(PropertyName.MATERIAL, r);
-
-c = new Cube();
-ac.InsertChild(c, Matrix4d.CreateTranslation(0.0, -3.0, -2.0));
-c.SetAttribute(PropertyName.MATERIAL, g);
-
-c = new Cube();
-ac.InsertChild(c, Matrix4d.CreateTranslation(0.0, -3.0, 2.0));
-c.SetAttribute(PropertyName.MATERIAL, r);
-
-root.InsertChild(ac, Matrix4d.Identity);
-	}
+    root.InsertChild(ac, Matrix4d.Identity);
+}
 
 
 
