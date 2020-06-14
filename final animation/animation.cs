@@ -35,7 +35,7 @@ scene.Background = new StarBackground(scene.BackgroundColor, 1000, 0.02, 0.5, 4.
 // Light sources:
 scene.Sources = new LinkedList<ILightSource>();
 scene.Sources.Add(new AmbientLightSource(0.8));
-scene.Sources.Add(new PointLightSource(new Vector3d(-5.0, 0.0, 0.0), 1.0));
+scene.Sources.Add(new PointLightSource(new Vector3d(-5.0, 4.0, 3.0), 1.0));
 
 // Camera:
 scene.Camera = new KeyframesAnimatedDoFCamera(a);
@@ -94,6 +94,11 @@ for (int i = 0; i < 5; i += 1)
     root.InsertChild(ac, Matrix4d.Identity);
 }
 
+AnimatedNodeTransform mono = new AnimatedNodeTransform(a, "p_mono", "r_mono", null);
+Cube monolith = new Cube();
+monolith.SetAttribute(PropertyName.MATERIAL, new PhongMaterial(new double[] { 0, 0, 0 }, 0.1, 0.1, 0.4, 128));
+mono.InsertChild(monolith, Matrix4d.Scale(0.4, 3.6, 1.6) * Matrix4d.CreateTranslation(-0.2, -1.8, -0.8));
+root.InsertChild(mono, Matrix4d.Identity);
 
 
 
@@ -181,5 +186,5 @@ if (a != null) {
     a.LoadKeyframes();
     context[PropertyName.CTX_START_ANIM] = a.Start;
     context[PropertyName.CTX_END_ANIM] = a.End;
-    context[PropertyName.CTX_FPS] = 25.0;
+    //context[PropertyName.CTX_FPS] = 25.0;
 }
