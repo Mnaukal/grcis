@@ -46,13 +46,17 @@ scene.Camera = new KeyframesAnimatedDoFCamera(a);
 Dictionary<string, string> p = Util.ParseKeyValueList(param);
 
 // materials
-var red = new double[] { 0.8, 0.1, 0.1 };
-var green = new double[] { 0.1, 1.0, 0.2 };
-var yellow = new double[] { 0.9, 0.7, 0.1 };
+//var red = new double[] { 0.8, 0.1, 0.1 };
+//var green = new double[] { 0.1, 1.0, 0.2 };
+//var yellow = new double[] { 0.9, 0.7, 0.1 };
+var darkBlue = new double[] { 0.0, 0.309, 0.619 };
+var purple = new double[] { 0.211, 0.0, 0.529 };
+var darkRed = new double[] { 0.623, 0.184, 0.184 };
 
-PhongMaterial r = new PhongMaterial(red, 0.1, 0.8, 0.1, 16);
-PhongMaterial g = new PhongMaterial(green, 0.1, 0.8, 0.1, 16);
-PhongMaterial y = new PhongMaterial(yellow, 0.1, 0.8, 0.1, 16);
+//PhongMaterial r = new PhongMaterial(red, 0.1, 0.8, 0.1, 16);
+PhongMaterial r = new PhongMaterial(darkBlue, 0.6, 0.4, 0.1, 16);
+PhongMaterial g = new PhongMaterial(purple, 0.6, 0.4, 0.1, 16);
+PhongMaterial y = new PhongMaterial(darkRed, 0.6, 0.4, 0.1, 16);
 
 private PhongMaterial GetMaterial(int j)
 {
@@ -96,7 +100,7 @@ for (int i = 0; i < 5; i += 1)
 
 AnimatedNodeTransform mono = new AnimatedNodeTransform(a, "p_mono", "r_mono", null);
 Cube monolith = new Cube();
-monolith.SetAttribute(PropertyName.MATERIAL, new PhongMaterial(new double[] { 0, 0, 0 }, 0.1, 0.1, 0.4, 128));
+monolith.SetAttribute(PropertyName.MATERIAL, new PhongMaterial(new double[] { 0, 0, 0 }, 0.1, 0.1, 0.2, 128));
 mono.InsertChild(monolith, Matrix4d.Scale(0.4, 3.6, 1.6) * Matrix4d.CreateTranslation(-0.2, -1.8, -0.8));
 root.InsertChild(mono, Matrix4d.Identity);
 
